@@ -15,7 +15,8 @@ func NewLogger() *Logger {
 	}
 }
 
-func (l *Logger) HandleEntry(e Entry) {
+func (l *Logger) HandleEntry(e Entry, done Callback) {
+	defer done()
 
 	switch e.Level {
 	case LEVEL_FATAL:

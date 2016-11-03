@@ -37,7 +37,8 @@ func NewWritterLogger(w io.Writer) *WriterLogger {
 	}
 }
 
-func (l *WriterLogger) HandleEntry(e Entry) {
+func (l *WriterLogger) HandleEntry(e Entry, done Callback) {
+	defer done()
 
 	c := COLORS[e.Level.Highest()]
 

@@ -51,19 +51,19 @@ func ( e *Entry ) Log(level Level, a ... interface{}) {
 	e.meerkat.wg.Add(1)
 	e.Level = level
 	e.Message = fmt.Sprint(a...)
-	e.meerkat.queue <- *e
+	e.meerkat.entryQueue <- *e
 }
 func ( e *Entry ) Logln(level Level, a ... interface{}) {
 	e.meerkat.wg.Add(1)
 	e.Level = level
 	e.Message = fmt.Sprintln(a...)
-	e.meerkat.queue <- *e
+	e.meerkat.entryQueue <- *e
 }
 func ( e *Entry ) Logf(level Level, format string, v ... interface{}) {
 	e.meerkat.wg.Add(1)
 	e.Level = level
 	e.Message = fmt.Sprintf(format, v...)
-	e.meerkat.queue <- *e
+	e.meerkat.entryQueue <- *e
 }
 
 func ( e *Entry ) Print(level Level, a ... interface{}) {
