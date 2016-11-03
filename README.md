@@ -1,4 +1,6 @@
-#Meerkats
+#Meerkats - Go Logger
+
+<img src="http://icons.iconarchive.com/icons/shwz/disney/256/timon-icon.png" />
 
 ## Install
 ```sh
