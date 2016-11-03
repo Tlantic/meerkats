@@ -1,11 +1,14 @@
 package meerkats
 
+var _ ILogger = (*Meerkat)(nil)
 
-
-func ( m *Meerkat) WithField(name string, value interface{}) *Entry {
+func ( m *Meerkat ) With(v... interface{}) ILogger {
+	return NewEntry(m).With(v...)
+}
+func ( m *Meerkat) WithField(name string, value interface{}) ILogger {
 	return NewEntry(m).WithField(name, value)
 }
-func ( m *Meerkat) WithFields(fields ... Fields) *Entry {
+func ( m *Meerkat) WithFields(fields ... Fields) ILogger {
 	return NewEntry(m).WithFields(fields...)
 }
 
@@ -19,14 +22,14 @@ func ( m *Meerkat ) Logf(level Level, format string, v ... interface{}) {
 	NewEntry(m).Logf(level, format, v...)
 }
 
-func ( m *Meerkat ) Print(a ... interface{}) {
-	NewEntry(m).Print(LEVEL_TRACE, a...)
+func ( m *Meerkat ) Print( a ... interface{}) {
+	NewEntry(m).Print( a...)
 }
 func ( m *Meerkat ) Println(a ... interface{}) {
-	NewEntry(m).Println(LEVEL_TRACE, a...)
+	NewEntry(m).Println( a...)
 }
-func ( m *Meerkat ) Printf(format string, v ... interface{}) {
-	NewEntry(m).Printf(LEVEL_TRACE, format, v...)
+func ( m *Meerkat ) Printf( format string, v ... interface{}) {
+	NewEntry(m).Printf(format, v...)
 }
 
 func ( m *Meerkat ) Trace(a ... interface{}) {
@@ -97,4 +100,8 @@ func ( m *Meerkat ) Panicln(a ... interface{}) {
 }
 func ( m *Meerkat ) Panicf(format string, v ... interface{}) {
 	NewEntry(m).Panicf(format, v...)
+}
+
+func (m *Meerkat) String() string {
+	return NewEntry(m).String()
 }

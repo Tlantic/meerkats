@@ -2,17 +2,17 @@ package meerkats
 
 import "sync"
 
-type HandlerCatalog struct {
+type catalog struct {
 	mu			sync.Mutex
 	handlers  	map[Level][]EntryHandler
 }
-func NewHandlerCatalog() *HandlerCatalog {
-	return &HandlerCatalog{
+func newCatalog() *catalog {
+	return &catalog{
 		mu:			sync.Mutex{},
 		handlers:	make(map[Level][]EntryHandler, 7),
 	}
 }
-func ( h *HandlerCatalog ) Add( bitmask Level, handlers...EntryHandler ) {
+func ( h *catalog ) Add( bitmask Level, handlers...EntryHandler ) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 

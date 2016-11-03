@@ -5,6 +5,10 @@ import (
 	"fmt"
 )
 
+const FIELD_STRUCT_TAG = "log"
+
+var _ ILogger = (*Entry)(nil)
+
 
 type Entry struct {
 	meerkat   	*Meerkat		`json:"-" xml:"-"`
@@ -32,14 +36,18 @@ func (e *Entry) String() string {
 		e.Timestamp.Format(e.TimeLayout), e.Level, e.Message, e.Fields.String())
 }
 
-func ( e *Entry ) WithField( name string, value interface{}) (*Entry) {
+func ( e *Entry ) With(fields ... interface{}) ILogger {
+	e.Fields.Merge(fields...)
+	return e
+}
+func ( e *Entry ) WithField( name string, value interface{}) ILogger {
 	e.Fields[name] = value
 	return e
 }
-func ( e *Entry ) WithFields(fields ... Fields) (*Entry) {
-	for _, f := range fields {
-		for name, value := range f {
-			e.Fields[name] = value
+func ( e *Entry ) WithFields(fields ... Fields) ILogger {
+	for _, field := range fields {
+		for key, value := range field {
+			e.Fields[key] = value
 		}
 	}
 	return e
@@ -56,7 +64,7 @@ func ( e *Entry ) Log(level Level, a ... interface{}) {
 func ( e *Entry ) Logln(level Level, a ... interface{}) {
 	e.meerkat.wg.Add(1)
 	e.Level = level
-	e.Message = fmt.Sprintln(a...)
+	e.Message = fmt.Sprint(a...)
 	e.meerkat.entryQueue <- *e
 }
 func ( e *Entry ) Logf(level Level, format string, v ... interface{}) {
@@ -66,14 +74,14 @@ func ( e *Entry ) Logf(level Level, format string, v ... interface{}) {
 	e.meerkat.entryQueue <- *e
 }
 
-func ( e *Entry ) Print(level Level, a ... interface{}) {
-	e.Log(level, a...)
+func ( e *Entry ) Print(a ... interface{}) {
+	e.Log(LEVEL_TRACE, a...)
 }
-func ( e *Entry ) Println(level Level, a ... interface{}) {
-	e.Logln(level, a...)
+func ( e *Entry ) Println(a ... interface{}) {
+	e.Logln(LEVEL_TRACE, a...)
 }
-func ( e *Entry ) Printf(level Level, format string, v ... interface{}) {
-	e.Logf(level, format, v...)
+func ( e *Entry ) Printf(format string, v ... interface{}) {
+	e.Logf(LEVEL_TRACE, format, v...)
 }
 
 func ( e *Entry ) Trace(a ... interface{}) {
