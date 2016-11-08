@@ -4,11 +4,11 @@ package meerkats
 type ILogger interface {
 	With(... interface{}) ILogger
 	WithField(string, interface{}) ILogger
-	WithFields(... Fields) ILogger
+	WithFields(... interface{}) ILogger
 
-	Log(Level, ... interface{})
-	Logln(Level, ... interface{})
-	Logf(Level, string, ... interface{})
+	Log(interface{}, ... interface{})
+	Logln(interface{}, ... interface{})
+	Logf(interface{}, string, ... interface{})
 
 	Print(... interface{})
 	Println(... interface{})

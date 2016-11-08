@@ -10,25 +10,27 @@ type EntryQueue chan Entry
 type EntryHandler func(Entry, Callback)
 
 type MeerkatOptions struct {
-	Level      		Level
-	TimeLayout 		string
-	MaxWorkers 		int
+	Level      	Level
+	TimeLayout	string
+	MaxWorkers 	uint
+	QueueSize	uint
 }
 type Meerkat struct {
-	Level           Level
-	TimeLayout      string
+	Level      Level
+	TimeLayout string
 
-	wg              sync.WaitGroup
-	entryQueue      EntryQueue
-	workerPool      *workperPool
-	handlersCatalog *catalog
-	closeChan       chan bool
+	wg         sync.WaitGroup
+	queue      EntryQueue
+	manager    *workerManager
+	handlers   *catalog
+	closeChan  chan bool
 }
 
 func NewMeerkat(opts MeerkatOptions) *Meerkat {
 
-	maxWorkers := 1
-	timeLayout := time.RFC3339
+	var maxWorkers 	uint 	= 1
+	var queueSize	uint 	= 200
+	var timeLayout 	string 	= time.RFC3339
 
 	if ( opts.TimeLayout != "" ) {
 		timeLayout = opts.TimeLayout
@@ -38,33 +40,38 @@ func NewMeerkat(opts MeerkatOptions) *Meerkat {
 		maxWorkers = opts.MaxWorkers
 	}
 
-	m := &Meerkat{
-		Level: 				opts.Level,
-		TimeLayout: 		timeLayout,
-
-		wg:       			sync.WaitGroup{},
-		entryQueue:			make(EntryQueue),
-		workerPool:			newWorkerPool(opts.MaxWorkers),
-		handlersCatalog:	newCatalog(),
-		closeChan: 			make(chan bool),
+	if (opts.QueueSize > 0) {
+		queueSize = opts.QueueSize
 	}
 
-	for i := 0; i < maxWorkers; i++ {
+	m := &Meerkat{
+		Level: opts.Level,
+		TimeLayout: timeLayout,
+
+		wg: sync.WaitGroup{},
+		queue: make(EntryQueue, queueSize),
+		manager: newWorkerManager(opts.MaxWorkers),
+		handlers: newHandlerManager(),
+		closeChan: make(chan bool),
+	}
+
+	var i uint
+	for ; i < maxWorkers; i++ {
 		m.AddWorker()
 	}
 
 	go func() {
-		defer close(m.entryQueue)
+		defer close(m.queue)
 
 		for {
 			select {
-			case entry := <-m.entryQueue:
+			case entry := <-m.queue:
 				go func(entry Entry) {
-					queue := <-m.workerPool.queueChans
+					queue := <-m.manager.pool
 					queue <- entry
 				}(entry)
 			case <-m.closeChan:
-				m.workerPool.Close()
+				m.manager.Close()
 				return
 			}
 
@@ -73,6 +80,15 @@ func NewMeerkat(opts MeerkatOptions) *Meerkat {
 
 	return m
 }
+
+//noinspection GoUnusedExportedFunction
+func New(opts *MeerkatOptions) *Meerkat {
+	if ( opts == nil) {
+		opts = &MeerkatOptions{}
+	}
+	return NewMeerkat(*opts)
+}
+
 func ( m *Meerkat ) AddWorker() {
 
 	go func() {
@@ -80,14 +96,14 @@ func ( m *Meerkat ) AddWorker() {
 		defer close(queue)
 
 		closeChan := make(chan bool)
-		m.workerPool.AddCloseChan(closeChan)
+		m.manager.AddCloseChan(closeChan)
 
 		for {
-			m.workerPool.queueChans <- queue
+			m.manager.pool <- queue
 			select {
 			case entry := <-queue:
 				if ( entry.Level >= m.Level ) {
-					handlers := m.handlersCatalog.handlers[entry.Level]
+					handlers := m.handlers.handlers[entry.Level]
 					if ( handlers != nil ) {
 						m.wg.Add(len(handlers))
 						for _, h := range handlers {
@@ -104,11 +120,11 @@ func ( m *Meerkat ) AddWorker() {
 	}()
 }
 func ( m *Meerkat ) Close() {
-	m.closeChan <- true
 	m.wg.Wait()
+	m.closeChan <- true
 }
 func ( m *Meerkat ) RegisterHandler(level Level, handlers ... EntryHandler) {
-	m.handlersCatalog.Add(level, handlers...)
+	m.handlers.Add(level, handlers...)
 }
 
 

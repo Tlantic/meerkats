@@ -2,28 +2,29 @@ package meerkats
 
 import "sync"
 
-type workperPool struct {
-	mu         		sync.Mutex
-	queueChans 		chan chan Entry
-	closeChans 		[]chan bool
+type workerManager struct {
+	mu         sync.Mutex
+	pool       chan chan Entry
+	closeChans []chan bool
 }
 
-func newWorkerPool(initCapacity int) *workperPool {
-	return &workperPool{
+func newWorkerManager(initCapacity uint) *workerManager {
+	return &workerManager{
 		mu:			sync.Mutex{},
-		queueChans:	make(chan chan Entry),
+		pool:		make(chan chan Entry),
 		closeChans:	make([]chan bool, 0, initCapacity),
 	}
 }
-func (d *workperPool) AddCloseChan(ch chan bool) {
+func (d *workerManager) AddCloseChan(ch chan bool) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	d.closeChans = append(d.closeChans, ch)
 }
-func (d *workperPool) Close() {
+func (d *workerManager) Close() {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	for _, c := range d.closeChans {
 		c <- true
 	}
+	close(d.pool)
 }
