@@ -44,34 +44,30 @@ func ( e *Entry ) WithField( name string, value interface{}) ILogger {
 	e.Fields[name] = value
 	return e
 }
-func ( e *Entry ) WithFields(fields ... Fields) ILogger {
-	for _, field := range fields {
-		for key, value := range field {
-			e.Fields[key] = value
-		}
-	}
+func ( e *Entry ) WithFields(fields ... interface{}) ILogger {
+	e.Fields.Merge(fields...)
 	return e
 }
 
 
 
-func ( e *Entry ) Log(level Level, a ... interface{}) {
+func ( e *Entry ) Log(level interface{}, a ... interface{}) {
 	e.meerkat.wg.Add(1)
-	e.Level = level
+	e.Level = level.(Level)
 	e.Message = fmt.Sprint(a...)
-	e.meerkat.entryQueue <- *e
+	e.meerkat.queue <- *e
 }
-func ( e *Entry ) Logln(level Level, a ... interface{}) {
+func ( e *Entry ) Logln(level interface{}, a ... interface{}) {
 	e.meerkat.wg.Add(1)
-	e.Level = level
+	e.Level = level.(Level)
 	e.Message = fmt.Sprint(a...)
-	e.meerkat.entryQueue <- *e
+	e.meerkat.queue <- *e
 }
-func ( e *Entry ) Logf(level Level, format string, v ... interface{}) {
+func ( e *Entry ) Logf(level interface{}, format string, v ... interface{}) {
 	e.meerkat.wg.Add(1)
-	e.Level = level
+	e.Level = level.(Level)
 	e.Message = fmt.Sprintf(format, v...)
-	e.meerkat.entryQueue <- *e
+	e.meerkat.queue <- *e
 }
 
 func ( e *Entry ) Print(a ... interface{}) {

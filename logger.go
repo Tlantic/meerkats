@@ -8,17 +8,17 @@ func ( m *Meerkat ) With(v... interface{}) ILogger {
 func ( m *Meerkat) WithField(name string, value interface{}) ILogger {
 	return NewEntry(m).WithField(name, value)
 }
-func ( m *Meerkat) WithFields(fields ... Fields) ILogger {
+func ( m *Meerkat) WithFields(fields ... interface{}) ILogger {
 	return NewEntry(m).WithFields(fields...)
 }
 
-func ( m *Meerkat ) Log(level Level, a ... interface{}) {
+func ( m *Meerkat ) Log(level interface{}, a ... interface{}) {
 	NewEntry(m).Log(level, a...)
 }
-func ( m *Meerkat ) Logln(level Level, a ... interface{}) {
+func ( m *Meerkat ) Logln(level interface{}, a ... interface{}) {
 	NewEntry(m).Logln(level, a...)
 }
-func ( m *Meerkat ) Logf(level Level, format string, v ... interface{}) {
+func ( m *Meerkat ) Logf(level interface{}, format string, v ... interface{}) {
 	NewEntry(m).Logf(level, format, v...)
 }
 

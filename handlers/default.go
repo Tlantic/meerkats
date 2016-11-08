@@ -8,7 +8,9 @@ import (
 	"fmt"
 )
 
+//noinspection GoUnusedConst
 const (
+	COLOR_NONE = 0
 	COLOR_RED = 31
 	COLOR_GREEN  = 32
 	COLOR_YELLOW = 33
@@ -17,7 +19,7 @@ const (
 )
 
 var COLORS = [...]int{
-	LEVEL_TRACE: COLOR_GREEN,
+	LEVEL_TRACE: COLOR_NONE,
 	LEVEL_DEBUG: COLOR_GRAY,
 	LEVEL_INFO:  COLOR_BLUE,
 	LEVEL_WARNING:  COLOR_YELLOW,
@@ -40,7 +42,7 @@ func NewWritterLogger(w io.Writer) *WriterLogger {
 func (l *WriterLogger) HandleEntry(e Entry, done Callback) {
 	defer done()
 
-	c := COLORS[e.Level.Highest()]
+	c := COLORS[e.Level]
 
 	text := fmt.Sprintf("\033[%dm timestamp=\"%s\" level=\"%s\" message=\"%s\" %s\033[0m\n",  c, e.Timestamp.Format(e.TimeLayout), e.Level, e.Message, e.Fields.String())
 
