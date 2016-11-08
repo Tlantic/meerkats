@@ -42,7 +42,7 @@ func NewWritterLogger(w io.Writer) *WriterLogger {
 func (l *WriterLogger) HandleEntry(e Entry, done Callback) {
 	defer done()
 
-	c := COLORS[e.Level.Highest()]
+	c := COLORS[e.Level]
 
 	text := fmt.Sprintf("\033[%dm timestamp=\"%s\" level=\"%s\" message=\"%s\" %s\033[0m\n",  c, e.Timestamp.Format(e.TimeLayout), e.Level, e.Message, e.Fields.String())
 

@@ -6,7 +6,7 @@ type catalog struct {
 	mu			sync.Mutex
 	handlers  	map[Level][]EntryHandler
 }
-func newCatalog() *catalog {
+func newHandlerManager() *catalog {
 	return &catalog{
 		mu:			sync.Mutex{},
 		handlers:	make(map[Level][]EntryHandler, 7),

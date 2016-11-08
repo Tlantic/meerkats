@@ -32,13 +32,8 @@ func main() {
 	sentry.RegisterHandler(LEVEL_ALL, out.HandleEntry, l.HandleEntry)
 
 
-	for i := 0; i < 100000; i++ {
-		go sentry.WithField("hello", "world").WithFields(Fields{
-			"remaining": 100000 - i,
-		}).Warning(i)
-	}
-
-	sentry.WithField("hello", "world").WithFields(Fields{
-		"make": "better",
+	sentry.With(MeerkatOptions{
+		MaxWorkers:10,
+		TimeLayout: time.RFC3339Nano,
 	}).Error("Opps something went wrong")
 }

@@ -11,7 +11,7 @@ type Fields map[string]interface{}
 func ( f *Fields) Merge(src...interface{}) {
 	for _, field := range src {
 
-		rElem := reflect.ValueOf(field).Elem()
+		rElem := reflect.ValueOf(field)
 		if (rElem.Kind() == reflect.Ptr) {
 			rElem = rElem.Elem()
 		}
@@ -30,8 +30,10 @@ func ( f *Fields) Merge(src...interface{}) {
 			}
 			break
 		case reflect.Map:
-			for k, v := range field.(map[string]interface{}) {
-				(*f)[k] = v
+			for _, v := range rElem.MapKeys() {
+				if k, ok := v.Interface().(string); ok {
+					(*f)[k] = rElem.MapIndex(v)
+				}
 			}
 			break
 		case reflect.Array:
