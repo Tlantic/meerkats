@@ -11,4 +11,6 @@ type Logger interface {
 	Error(msg string, fields ...KeyValue)
 	Panic(msg string, fields ...KeyValue)
 	Fatal(msg string, fields ...KeyValue)
+
+	Dispose()
 }
