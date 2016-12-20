@@ -1,130 +1,68 @@
 package meerkats
 
-import (
-	"time"
-	"sync"
-)
 
-type Callback func()
-type EntryQueue chan Entry
-type EntryHandler func(Entry, Callback)
+var root = New(TRACE)
 
-type MeerkatOptions struct {
-	Level      	Level
-	TimeLayout	string
-	MaxWorkers 	uint
-	QueueSize	uint
-}
-type Meerkat struct {
-	Level      Level
-	TimeLayout string
-
-	wg         sync.WaitGroup
-	queue      EntryQueue
-	manager    *workerManager
-	handlers   *catalog
-	closeChan  chan bool
+func Register(hs ... Handler) {
+	root.Register(hs...)
 }
 
-func NewMeerkat(opts MeerkatOptions) *Meerkat {
-
-	var maxWorkers 	uint 	= 1
-	var queueSize	uint 	= 200
-	var timeLayout 	string 	= time.RFC3339
-
-	if ( opts.TimeLayout != "" ) {
-		timeLayout = opts.TimeLayout
-	}
-
-	if (opts.MaxWorkers > 0) {
-		maxWorkers = opts.MaxWorkers
-	}
-
-	if (opts.QueueSize > 0) {
-		queueSize = opts.QueueSize
-	}
-
-	m := &Meerkat{
-		Level: opts.Level,
-		TimeLayout: timeLayout,
-
-		wg: sync.WaitGroup{},
-		queue: make(EntryQueue, queueSize),
-		manager: newWorkerManager(opts.MaxWorkers),
-		handlers: newHandlerManager(),
-		closeChan: make(chan bool),
-	}
-
-	var i uint
-	for ; i < maxWorkers; i++ {
-		m.AddWorker()
-	}
-
-	go func() {
-		defer close(m.queue)
-
-		for {
-			select {
-			case entry := <-m.queue:
-				go func(entry Entry) {
-					queue := <-m.manager.pool
-					queue <- entry
-				}(entry)
-			case <-m.closeChan:
-				m.manager.Close()
-				return
-			}
-
-		}
-	}()
-
-	return m
+func AddBool(key string, value bool) {
+	root.AddBool(key, value)
 }
-
-//noinspection GoUnusedExportedFunction
-func New(opts *MeerkatOptions) *Meerkat {
-	if ( opts == nil) {
-		opts = &MeerkatOptions{}
-	}
-	return NewMeerkat(*opts)
+func AddString(key string, value string) {
+	root.AddString(key, value)
 }
-
-func ( m *Meerkat ) AddWorker() {
-
-	go func() {
-		queue := make(EntryQueue)
-		defer close(queue)
-
-		closeChan := make(chan bool)
-		m.manager.AddCloseChan(closeChan)
-
-		for {
-			m.manager.pool <- queue
-			select {
-			case entry := <-queue:
-				if ( entry.Level >= m.Level ) {
-					handlers := m.handlers.handlers[entry.Level]
-					if ( handlers != nil ) {
-						m.wg.Add(len(handlers))
-						for _, h := range handlers {
-							go h(entry, m.wg.Done)
-						}
-					}
-				}
-				m.wg.Done()
-			case <-closeChan:
-				return
-			}
-
-		}
-	}()
+func AddInt(key string, value int) {
+	root.AddInt(key, value)
 }
-func ( m *Meerkat ) Close() {
-	m.wg.Wait()
-	m.closeChan <- true
+func AddIn64(key string, value int64) {
+	root.AddInt64(key, value)
 }
-func ( m *Meerkat ) RegisterHandler(level Level, handlers ... EntryHandler) {
-	m.handlers.Add(level, handlers...)
+func AddUint(key string, value uint) {
+	root.AddUint(key, value)
+}
+func AddUint64(key string, value uint64) {
+	root.AddUint64(key, value)
+}
+func AddFloat32(key string, value float32) {
+	root.AddFloat32(key, value)
+}
+func AddFloat64(key string, value float64) {
+	root.AddFloat64(key, value)
+}
+func AddObject(key string, value interface{}) {
+	root.AddObject(key, value)
+}
+func With(fields ...KeyValue) {
+	root.With(fields...)
 }
 
 
+func Log(level Level, msg string, fields ...KeyValue) {
+	root.Log(level, msg, fields...)
+}
+
+
+func Trace(msg string, fields ...KeyValue) {
+	root.Trace(msg, fields...)
+}
+
+func Debug(msg string, fields ...KeyValue) {
+	root.Debug(msg, fields...)
+}
+func Info(msg string, fields ...KeyValue) {
+	root.Info(msg, fields...)
+}
+func Warn(msg string, fields ...KeyValue) {
+	root.Warn(msg, fields...)
+}
+func Error(msg string, fields ...KeyValue) {
+	root.Error(msg, fields...)
+}
+func Panic(msg string, fields ...KeyValue) {
+	root.Panic(msg, fields...)
+}
+func Fatal(msg string, fields ...KeyValue) {
+	root.Fatal(msg, fields...)
+}
