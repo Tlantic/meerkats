@@ -149,7 +149,7 @@ func (h *writerLogger) With(fs ...meerkats.KeyValue) {
 }
 
 
-func (h *writerLogger) Log(level meerkats.Level, msg string, fields ... meerkats.KeyValue) {
+func (h *writerLogger) Log(level meerkats.Level, msg string, fields []meerkats.KeyValue) {
 	if ( h.Level&level != 0 ) {
 		log(h.w, level, time.Now(), h.TimeLayout, msg, h.bytes[0:], fields)
 	}

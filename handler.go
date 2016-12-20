@@ -23,7 +23,7 @@ type HandlerSet []Handler
 type Handler interface {
 	Encoder
 
-	Log(Level, string, ... KeyValue)
+	Log(Level, string, []KeyValue)
 
 	SetTimeLayout(layout string)
 	GetTimeLayout() string

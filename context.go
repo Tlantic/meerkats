@@ -102,56 +102,56 @@ func (ctx *Context) With(fields ...KeyValue) {
 func (ctx *Context) Log(level Level, msg string, fields ...KeyValue) {
 	if (ctx.level <= level) {
 		for _, h := range ctx.handlers {
-			h.Log(level, msg, fields...)
+			h.Log(level, msg, fields)
 		}
 	}
 }
 func (ctx *Context) Trace(msg string, fields ...KeyValue) {
 	if (ctx.level <= TRACE) {
 		for _, h := range ctx.handlers {
-			h.Log(TRACE, msg, fields...)
+			h.Log(TRACE, msg, fields)
 		}
 	}
 }
 func (ctx *Context) Debug(msg string, fields ...KeyValue) {
 	if (ctx.level <= DEBUG) {
 		for _, h := range ctx.handlers {
-			h.Log(DEBUG, msg, fields...)
+			h.Log(DEBUG, msg, fields)
 		}
 	}
 }
 func (ctx *Context) Info(msg string, fields ...KeyValue) {
-	if (ctx.level <= INFO) {
+	if ctx.level <= INFO {
 		for _, h := range ctx.handlers {
-			h.Log(INFO, msg, fields...)
+			h.Log(INFO, msg, fields)
 		}
 	}
 }
 func (ctx *Context) Warn(msg string, fields ...KeyValue) {
 	if (ctx.level <= WARNING) {
 		for _, h := range ctx.handlers {
-			h.Log(WARNING, msg, fields...)
+			h.Log(WARNING, msg, fields)
 		}
 	}
 }
 func (ctx *Context) Error(msg string, fields ...KeyValue) {
 	if (ctx.level <= ERROR) {
 		for _, h := range ctx.handlers {
-			h.Log(ERROR, msg, fields...)
+			h.Log(ERROR, msg, fields)
 		}
 	}
 }
 func (ctx *Context) Panic(msg string, fields ...KeyValue) {
 	if (ctx.level <= PANIC) {
 		for _, h := range ctx.handlers {
-			h.Log(PANIC, msg, fields...)
+			h.Log(PANIC, msg, fields)
 		}
 	}
 }
 func (ctx *Context) Fatal(msg string, fields ...KeyValue) {
 	if (ctx.level <= FATAL) {
 		for _, h := range ctx.handlers {
-			h.Log(FATAL, msg, fields...)
+			h.Log(FATAL, msg, fields)
 		}
 	}
 }
@@ -172,6 +172,9 @@ func (ctx *Context) Clone() (c *Context) {
 		c.Metadata[k] = v
 	}
 	return
+}
+
+func (ctx *Context) Dispose() () {
 }
 
 
