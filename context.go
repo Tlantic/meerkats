@@ -194,7 +194,6 @@ func (ctx *context) Clone() Logger {
 	defer ctx.mu.Unlock()
 	ctx.mu.Lock()
 	c := pool.Get().(*context)
-	c.handlers = ctx.handlers[:0]
 	c.metadata = map[string]string{}
 	c.Level = ctx.Level
 	for _, h := range ctx.handlers {
