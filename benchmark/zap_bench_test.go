@@ -17,6 +17,7 @@ func zap_fakeFields() []zap.Field {
 		zap.String("string", "four!"),
 		zap.Bool("bool", true),
 		zap.String("another string", "done!"),
+		zap.Object("object", _jane),
 	}
 }
 
@@ -28,86 +29,102 @@ func zap_fakeMessages(n int) []string {
 	return messages
 }
 
-func BenchmarkZapDisabledLevelsWithoutFields(b *testing.B) {
-	logger := zap.New(zap.NewTextEncoder(), zap.ErrorLevel,zap.DiscardOutput)
+
+func BenchmarkZapNew(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Info("Should be discarded.")
+			zap.New(zap.NewTextEncoder(), zap.ErrorLevel)
 		}
 	})
 }
 
-func BenchmarkZapDisabledLevelsAccumulatedContext(b *testing.B) {
-	context := zap_fakeFields()
+func BenchmarkZapNewWithPredefinedFields(b *testing.B) {
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			for pb.Next() {
+				zap.New(
+					zap.NewTextEncoder(),
+					zap.ErrorLevel,
+					zap.Fields(zap_fakeFields()...))
+			}
+		}
+	})
+}
+
+func BenchmarkZapDisabledLog(b *testing.B) {
+	logger := zap.New(zap.NewTextEncoder(), zap.ErrorLevel)
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			logger.Info("A sample text message.")
+		}
+	})
+}
+
+func BenchmarkZapDisabledLogWithPredefinedFields(b *testing.B) {
+	logger := zap.New(zap.NewTextEncoder(), zap.ErrorLevel, zap.Fields(zap_fakeFields()...))
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			logger.Info("A sample text message.")
+		}
+	})
+}
+
+
+
+func BenchmarkZapDisabledLogWithFields(b *testing.B) {
 	logger := zap.New(
 		zap.NewTextEncoder(),
 		zap.ErrorLevel,
-		zap.DiscardOutput,
-		zap.Fields(context...),
 	)
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Info("Should be discarded.")
+			logger.Info("A sample text message.", zap_fakeFields()...)
 		}
 	})
 }
 
-func BenchmarkZapDisabledLevelsAddingFields(b *testing.B) {
-	logger := zap.New(
-		zap.NewTextEncoder(),
-		zap.ErrorLevel,
-		zap.DiscardOutput,
-	)
+
+
+
+
+
+
+func BenchmarkZapLog(b *testing.B) {
+	logger := zap.New(zap.NewTextEncoder(), zap.DiscardOutput)
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Info("Should be discarded.", zap_fakeFields()...)
+			logger.Info("A sample text message.")
 		}
 	})
 }
 
-func BenchmarkZapAddingFields(b *testing.B) {
-	logger := zap.New(
-		zap.NewTextEncoder(),
-		zap.DebugLevel,
-		zap.DiscardOutput,
-	)
+func BenchmarkZapLogWithPredefinedFields(b *testing.B) {
+	logger := zap.New(zap.NewTextEncoder(), zap.DiscardOutput, zap.Fields(zap_fakeFields()...))
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Info("Go fast.", zap_fakeFields()...)
+			logger.Info("A sample text message.")
 		}
 	})
 }
 
-func BenchmarkZapWithAccumulatedContext(b *testing.B) {
-	context := zap_fakeFields()
-	logger := zap.New(
-		zap.NewTextEncoder(),
-		zap.DebugLevel,
-		zap.Fields(context...),
-		zap.DiscardOutput,
-	)
-	b.ResetTimer()
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			logger.Info("Go really fast.")
-		}
-	})
-}
 
-func BenchmarkZapWithoutFields(b *testing.B) {
+
+func BenchmarkZapLogWithFields(b *testing.B) {
 	logger := zap.New(
 		zap.NewTextEncoder(),
-		zap.DebugLevel,
 		zap.DiscardOutput,
 	)
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Info("Go fast.")
+			logger.Info("A sample text message.", zap_fakeFields()...)
 		}
 	})
 }

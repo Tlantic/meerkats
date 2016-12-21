@@ -21,5 +21,5 @@ func TestRegister(t *testing.T) {
 
 func TestLog(t *testing.T) {
 	logger := New(TRACE)
-	logger.Log(TRACE, "test message", KeyValue{ Key: "boolValue", Type: TypeBool, ValueBool: true })
+	logger.Log(TRACE, "test message", Field{ Key: "boolValue", Type: TypeBool, ValueBool: true })
 }

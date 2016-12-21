@@ -26,6 +26,10 @@ var Levels = [...]string {
 	PANIC: "PANIC",
 }
 
-func ( l Level ) String() string {
-	return Levels[l]
+func ( lvl Level ) String() string {
+	return Levels[lvl]
+}
+
+func ( lvl Level ) Apply(l Logger) {
+	l.SetLevel(lvl)
 }

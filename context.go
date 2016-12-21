@@ -1,180 +1,213 @@
 package meerkats
 
 import (
-	"time"
 	"sync"
+	"time"
 )
 
-var now = time.Now
+var pool = sync.Pool{
+	New: func() interface{} {
+		return &context{
+			handlers: make([]Handler, 0, 1),
+		}
+	},
+}
 
-type Metadata map[string]string
-
-type Context struct {
-	Metadata
-	level    Level
-
+var _ Logger = (*context)(nil)
+type context struct {
+	metadata map[string]string
+	Level    Level
 	handlers []Handler
-	length   int
 	mu       sync.Mutex
 	wg       sync.WaitGroup
 }
 
-func New(level Level, options...ContextOption) (ctx *Context) {
-	ctx = &Context{
-		handlers: make([]Handler, 0, 0),
-		level: level,
-		Metadata: map[string]string{},
-	}
+func New(options...LoggerOption) Logger {
+	ctx := pool.Get().(*context)
+	ctx.metadata = make(map[string]string)
+	ctx.Level = TRACE
 	for _, opt := range options {
-		opt(ctx)
+		opt.Apply(ctx)
 	}
-	return
+	return ctx
 }
-func From( parent *Context, options...ContextOption) (ctx *Context) {
+func From( parent Logger, options...LoggerOption) ( ctx  Logger) {
 	ctx = parent.Clone()
 	for _, opt := range options {
-		opt(ctx)
+		opt.Apply(ctx)
 	}
 	return
 }
 
 
+func (ctx *context) SetLevel(lvl Level) {
+	ctx.Level = lvl
+}
 
-func (ctx *Context) Register(hs ... Handler) {
+func (ctx *context) Register(hs ... Handler) {
 	ctx.mu.Lock()
 	defer ctx.mu.Unlock()
 	ctx.handlers = append(ctx.handlers, hs...)
-	ctx.length = len(ctx.handlers)
 }
 
-func (ctx *Context) AddBool(key string, value bool) {
+func (ctx *context) SetMeta(key string, value string) {
+	ctx.metadata[key] = value
+}
+func (ctx *context) GetMeta(key string) string {
+	return ctx.metadata[key]
+}
+
+
+func (ctx *context) AddBool(key string, value bool) {
 	for _, h := range ctx.handlers {
 		h.AddBool(key, value)
 	}
 }
-func (ctx *Context) AddString(key string, value string) {
+func (ctx *context) AddString(key string, value string) {
 	for _, h := range ctx.handlers {
 		h.AddString(key, value)
 	}
 }
-func (ctx *Context) AddInt(key string, value int) {
+func (ctx *context) AddInt(key string, value int) {
 	for _, h := range ctx.handlers {
 		h.AddInt(key, value)
 	}
 }
-func (ctx *Context) AddInt64(key string, value int64) {
+func (ctx *context) AddInt64(key string, value int64) {
 	for _, h := range ctx.handlers {
 		h.AddInt64(key, value)
 	}
 }
-func (ctx *Context) AddUint(key string, value uint) {
+func (ctx *context) AddUint(key string, value uint) {
 	for _, h := range ctx.handlers {
 		h.AddUint(key, value)
 	}
 }
-func (ctx *Context) AddUint64(key string, value uint64) {
+func (ctx *context) AddUint64(key string, value uint64) {
 	for _, h := range ctx.handlers {
 		h.AddUint64(key, value)
 	}
 }
-func (ctx *Context) AddFloat32(key string, value float32) {
+func (ctx *context) AddFloat32(key string, value float32) {
 	for _, h := range ctx.handlers {
 		h.AddFloat32(key, value)
 	}
 }
-func (ctx *Context) AddFloat64(key string, value float64) {
+func (ctx *context) AddFloat64(key string, value float64) {
 	for _, h := range ctx.handlers {
 		h.AddFloat64(key, value)
 	}
 }
-func (ctx *Context) AddObject(key string, value interface{}) {
+func (ctx *context) Add(key string, value interface{}) {
 	for _, h := range ctx.handlers {
-		h.AddObject(key, value)
+		h.Add(key, value)
 	}
 }
-func (ctx *Context) With(fields ...KeyValue) {
+func (ctx *context) With(fields ...Field) {
 	for _, h := range ctx.handlers {
 		h.With(fields...)
 	}
 }
 
 
-func (ctx *Context) Log(level Level, msg string, fields ...KeyValue) {
-	if (ctx.level <= level) {
+func (ctx *context) Log(level Level, msg string, fields ...Field) {
+	if (ctx.Level <= level) {
+		now := time.Now()
 		for _, h := range ctx.handlers {
-			h.Log(level, msg, fields)
+			h.Log(now, level, msg, fields, ctx.metadata)
 		}
 	}
 }
-func (ctx *Context) Trace(msg string, fields ...KeyValue) {
-	if (ctx.level <= TRACE) {
+func (ctx *context) Trace(msg string, fields ...Field) {
+	if (ctx.Level <= TRACE) {
+		now := time.Now()
 		for _, h := range ctx.handlers {
-			h.Log(TRACE, msg, fields)
+			if ( h.GetLevel()&TRACE != 0 ) {
+				h.Log(now, TRACE, msg, fields, ctx.metadata)
+			}
 		}
 	}
 }
-func (ctx *Context) Debug(msg string, fields ...KeyValue) {
-	if (ctx.level <= DEBUG) {
+func (ctx *context) Debug(msg string, fields ...Field) {
+	if (ctx.Level <= DEBUG) {
+		now := time.Now()
 		for _, h := range ctx.handlers {
-			h.Log(DEBUG, msg, fields)
+			if ( h.GetLevel()&DEBUG != 0 ) {
+				h.Log(now, DEBUG, msg, fields, ctx.metadata)
+			}
 		}
 	}
 }
-func (ctx *Context) Info(msg string, fields ...KeyValue) {
-	if ctx.level <= INFO {
+func (ctx *context) Info(msg string, fields ...Field) {
+	if ctx.Level <= INFO {
+		now := time.Now()
 		for _, h := range ctx.handlers {
-			h.Log(INFO, msg, fields)
+			if ( h.GetLevel()&INFO != 0 ) {
+				h.Log(now, INFO, msg, fields, ctx.metadata)
+			}
 		}
 	}
 }
-func (ctx *Context) Warn(msg string, fields ...KeyValue) {
-	if (ctx.level <= WARNING) {
+func (ctx *context) Warn(msg string, fields ...Field) {
+	if (ctx.Level <= WARNING) {
+		now := time.Now()
 		for _, h := range ctx.handlers {
-			h.Log(WARNING, msg, fields)
+			if ( h.GetLevel()&WARNING != 0 ) {
+				h.Log(now, WARNING, msg, fields, ctx.metadata)
+			}
 		}
 	}
 }
-func (ctx *Context) Error(msg string, fields ...KeyValue) {
-	if (ctx.level <= ERROR) {
+func (ctx *context) Error(msg string, fields ...Field) {
+	if (ctx.Level <= ERROR) {
+		now := time.Now()
 		for _, h := range ctx.handlers {
-			h.Log(ERROR, msg, fields)
+			if ( h.GetLevel()&ERROR != 0 ) {
+				h.Log(now, ERROR, msg, fields, ctx.metadata)
+			}
 		}
 	}
 }
-func (ctx *Context) Panic(msg string, fields ...KeyValue) {
-	if (ctx.level <= PANIC) {
+func (ctx *context) Panic(msg string, fields ...Field) {
+	if (ctx.Level <= PANIC) {
+		now := time.Now()
 		for _, h := range ctx.handlers {
-			h.Log(PANIC, msg, fields)
+			if ( h.GetLevel()&PANIC != 0 ) {
+				h.Log(now, PANIC, msg, fields, ctx.metadata)
+			}
 		}
 	}
 }
-func (ctx *Context) Fatal(msg string, fields ...KeyValue) {
-	if (ctx.level <= FATAL) {
+func (ctx *context) Fatal(msg string, fields ...Field) {
+	if (ctx.Level <= FATAL) {
+		now := time.Now()
 		for _, h := range ctx.handlers {
-			h.Log(FATAL, msg, fields)
+			if ( h.GetLevel()&FATAL != 0 ) {
+				h.Log(now, FATAL, msg, fields, ctx.metadata)
+			}
 		}
 	}
 }
 
-func (ctx *Context) Clone() (c *Context) {
+
+func (ctx *context) Clone() Logger {
 	defer ctx.mu.Unlock()
 	ctx.mu.Lock()
-
-	c = &Context{
-		Metadata: map[string]string{},
-		mu: sync.Mutex{},
-		level: ctx.level,
-	}
+	c := pool.Get().(*context)
+	c.handlers = ctx.handlers
+	c.metadata = map[string]string{}
+	c.Level = ctx.Level
 	for _, h := range ctx.handlers {
 		c.handlers = append(c.handlers, h.Clone())
 	}
-	for k, v := range ctx.Metadata {
-		c.Metadata[k] = v
+	for k, v := range ctx.metadata {
+		c.metadata[k] = v
 	}
-	return
+	return c
 }
-
-func (ctx *Context) Dispose() () {
+func (ctx *context) Dispose() () {
+	ctx.handlers = ctx.handlers[:0]
+	pool.Put(ctx)
 }
 
 

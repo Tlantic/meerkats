@@ -34,7 +34,7 @@ var valueTests = []struct {
 
 func TestNew(t *testing.T) {
 	for _, vt := range valueTests {
-		f := Field(key, vt.input)
+		f := NewField(key, vt.input)
 
 		if f.Type != vt.output_kind {
 			t.Fail()
@@ -44,7 +44,7 @@ func TestNew(t *testing.T) {
 
 func TestField_GetType(t *testing.T) {
 	for _, vt := range valueTests {
-		f := Field(key, vt.input)
+		f := NewField(key, vt.input)
 		if f.Type != vt.output_kind {
 			t.Fail()
 		}
@@ -56,7 +56,7 @@ func TestField_GetType(t *testing.T) {
 
 func TestField_Get(t *testing.T) {
 	for _, vt := range valueTests {
-		f := Field(key, vt.input)
+		f := NewField(key, vt.input)
 		if f.Get() != vt.output {
 			t.Fail()
 		}
@@ -64,7 +64,7 @@ func TestField_Get(t *testing.T) {
 }
 func TestField_Set(t *testing.T) {
 	for _, vt := range valueTests {
-		f := Field(key, nil)
+		f := NewField(key, nil)
 		f.Set(vt.input)
 		if ( f.Get() != vt.output )  {
 			t.Fail()
@@ -74,7 +74,7 @@ func TestField_Set(t *testing.T) {
 
 func TestField_SetString(t *testing.T) {
 	sample := "qwerty"
-	v := Field(key, nil)
+	v := NewField(key, nil)
 	v.SetString(sample)
 	if v.ValueString != sample {
 		t.Fail()
@@ -82,7 +82,7 @@ func TestField_SetString(t *testing.T) {
 }
 func TestField_GetString(t *testing.T) {
 	sample := "qwerty"
-	v := Field(key, nil)
+	v := NewField(key, nil)
 	v.SetString(sample)
 	if v.GetString() != sample {
 		t.Fail()
@@ -91,7 +91,7 @@ func TestField_GetString(t *testing.T) {
 
 func TestField_SetBool(t *testing.T) {
 	sample := true
-	v := Field(key, nil)
+	v := NewField(key, nil)
 	v.SetBool(sample)
 	if v.ValueBool != sample {
 		t.Fail()
@@ -99,7 +99,7 @@ func TestField_SetBool(t *testing.T) {
 }
 func TestField_GetBool(t *testing.T) {
 	sample := true
-	v := Field(key, nil)
+	v := NewField(key, nil)
 	v.SetBool(sample)
 	if v.GetBool() != sample {
 		t.Fail()
@@ -108,15 +108,15 @@ func TestField_GetBool(t *testing.T) {
 
 func TestField_SetInt(t *testing.T) {
 	sample := int(16)
-	v := Field(key, nil)
+	v := NewField(key, nil)
 	v.SetInt(sample)
-	if v.ValueInt != int64(sample) {
+	if v.ValueInt64 != int64(sample) {
 		t.Fail()
 	}
 }
 func TestField_GetInt(t *testing.T) {
 	sample := int(16)
-	v := Field(key, nil)
+	v := NewField(key, nil)
 	v.SetInt(sample)
 	if ( v.GetInt() != sample) {
 		t.Fail()
@@ -125,16 +125,16 @@ func TestField_GetInt(t *testing.T) {
 
 func TestField_SetInt64(t *testing.T) {
 	sample := int64(16)
-	v := Field(key, nil)
+	v := NewField(key, nil)
 	v.SetInt64(sample)
 
-	if ( v.ValueInt != int64(sample)) {
+	if ( v.ValueInt64 != int64(sample)) {
 		t.Fail()
 	}
 }
 func TestField_GetInt64(t *testing.T) {
 	sample := int64(16)
-	v := Field(key, nil)
+	v := NewField(key, nil)
 	v.SetInt64(sample)
 
 	if ( v.GetInt64() != sample) {
@@ -144,16 +144,16 @@ func TestField_GetInt64(t *testing.T) {
 
 func TestField_SetUint(t *testing.T) {
 	sample := uint(16)
-	v := Field(key, nil)
+	v := NewField(key, nil)
 	v.SetUint(sample)
 
-	if ( v.ValueUint != uint64(sample)) {
+	if ( v.ValueUint64 != uint64(sample)) {
 		t.Fail()
 	}
 }
 func TestField_GetUint(t *testing.T) {
 	sample := uint(16)
-	v := Field(key, nil)
+	v := NewField(key, nil)
 	v.SetUint(sample)
 
 	if ( v.GetUint() != sample) {
@@ -163,16 +163,16 @@ func TestField_GetUint(t *testing.T) {
 
 func TestField_SetUint64(t *testing.T) {
 	sample := uint64(16)
-	v := Field(key, nil)
+	v := NewField(key, nil)
 	v.SetUint64(sample)
 
-	if ( v.ValueUint != uint64(sample)) {
+	if ( v.ValueUint64 != uint64(sample)) {
 		t.Fail()
 	}
 }
 func TestField_GetUint64(t *testing.T) {
 	sample := uint64(16)
-	v := Field(key, nil)
+	v := NewField(key, nil)
 	v.SetUint64(sample)
 
 	if ( v.GetUint64() != uint64(sample)) {
@@ -182,7 +182,7 @@ func TestField_GetUint64(t *testing.T) {
 
 func TestField_SetFloat32(t *testing.T) {
 	sample := float32(16.666666)
-	v := Field(key, nil)
+	v := NewField(key, nil)
 	v.SetFloat32(sample)
 
 	if ( v.ValueFloat32 != sample) {
@@ -191,7 +191,7 @@ func TestField_SetFloat32(t *testing.T) {
 }
 func TestField_GetFloat32(t *testing.T) {
 	sample := float32(16.666666)
-	v := Field(key, nil)
+	v := NewField(key, nil)
 	v.SetFloat32(sample)
 
 	if ( v.GetFloat32() != sample) {
@@ -201,7 +201,7 @@ func TestField_GetFloat32(t *testing.T) {
 
 func TestField_SetFloat64(t *testing.T) {
 	sample := float64(16.666666)
-	v := Field(key, nil)
+	v := NewField(key, nil)
 	v.SetFloat64(sample)
 
 	if ( v.ValueFloat64 != sample) {
@@ -210,7 +210,7 @@ func TestField_SetFloat64(t *testing.T) {
 }
 func TestField_GetFloat64(t *testing.T) {
 	sample := float64(16.666666)
-	v := Field(key, nil)
+	v := NewField(key, nil)
 	v.SetFloat64(sample)
 
 	if ( v.GetFloat64() != sample) {
@@ -220,7 +220,7 @@ func TestField_GetFloat64(t *testing.T) {
 
 func TestField_SetInterface(t *testing.T) {
 	sample := struct{}{}
-	v := Field(key, nil)
+	v := NewField(key, nil)
 	v.SetInterface(sample)
 
 	if ( v.ValueInterface != sample) {
@@ -229,7 +229,7 @@ func TestField_SetInterface(t *testing.T) {
 }
 func TestField_GetInterface(t *testing.T) {
 	sample := struct{}{}
-	v := Field(key, nil)
+	v := NewField(key, nil)
 	v.SetInterface(sample)
 
 	if ( v.GetInterface() != sample) {
@@ -239,7 +239,7 @@ func TestField_GetInterface(t *testing.T) {
 
 func TestField_String(t *testing.T) {
 	for _, vt := range valueTests {
-		f := Field(key, vt.input)
+		f := NewField(key, vt.input)
 		if f.String() != vt.string {
 			t.Logf("Expected: %s but got %s\n", vt.string, f.String())
 			t.Fail()

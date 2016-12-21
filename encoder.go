@@ -9,6 +9,6 @@ type Encoder interface {
 	AddUint64(key string, value uint64)
 	AddFloat32(key string, value float32)
 	AddFloat64(key string, value float64)
-	AddObject(key string, value interface{})
-	With(fields ...KeyValue)
+	Add(key string, value interface{})
+	With(fields ...Field)
 }

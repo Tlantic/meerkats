@@ -10,9 +10,17 @@ var (
 	DiscardOutput = Output(ioutil.Discard)
 )
 
+
+
 func Output(w io.Writer) meerkats.HandlerOption {
-	return meerkats.HandlerOption(func(handler meerkats.Handler) {
+	return meerkats.HandlerReceiver(func(handler meerkats.Handler) {
 		handler.(*writerLogger).w = w
 	})
 }
 
+
+func TimeLayoutOption(layout string) meerkats.HandlerOption {
+	return meerkats.HandlerReceiver(func(handler meerkats.Handler) {
+		handler.(*writerLogger).timelayout = layout
+	})
+}

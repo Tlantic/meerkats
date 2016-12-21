@@ -1,75 +1,43 @@
 package meerkats
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+)
 
-type FieldSet []KeyValue
 
-type KeyValue struct {
+type FieldSet []Field
+
+type Field struct {
 	Key            string
 	Type           FieldType
 	ValueBool      bool
 	ValueString    string
-	ValueInt       int64
-	ValueUint      uint64
+	ValueInt64     int64
+	ValueUint64    uint64
 	ValueFloat32   float32
 	ValueFloat64   float64
 	ValueInterface interface{}
 }
 
-func Field(key string, value interface{}) (f KeyValue) {
-	f = KeyValue{Key: key}
-	f.Set(value)
-	return
-}
-func String(key string, value string) KeyValue {
-	return KeyValue{Key: key, Type: TypeString, ValueString: value}
-}
-func Bool(key string, value bool) KeyValue {
-	return KeyValue{Key: key, Type: TypeBool, ValueBool: value}
-}
-func Int(key string, value int) KeyValue {
-	return KeyValue{Key: key, Type: TypeInt, ValueInt: int64(value)}
-}
-func Int64(key string, value int64) KeyValue {
-	return KeyValue{Key: key, Type: TypeInt, ValueInt: value}
-}
-func Uint(key string, value uint) KeyValue {
-	return KeyValue{Key: key, Type: TypeUint, ValueUint: uint64(value)}
-}
-func Uint64(key string, value uint64) KeyValue {
-	return KeyValue{Key: key, Type: TypeUint, ValueUint: value}
-}
-func Float32(key string, value float32) KeyValue {
-	return KeyValue{Key: key, Type: TypeFloat32, ValueFloat32: value}
-}
-func Float64(key string, value float64) KeyValue {
-	return KeyValue{Key: key, Type: TypeFloat64, ValueFloat64: value}
+func (v Field) Apply(l Logger) {
+	l.With(v)
 }
 
-func (v *KeyValue) clear() {
-	v.ValueInterface	= nil
-	v.ValueString		= ""
-	v.ValueBool			= false
-	v.ValueInt			= 0
-	v.ValueUint			= 0
-	v.ValueFloat32		= 0
-	v.ValueFloat64		= 0
-}
-
-func (v *KeyValue) GetType() FieldType {
+func (v Field) GetType() FieldType {
 	return v.Type
 }
 
-func (v *KeyValue) Get() interface{} {
+func (v Field) Get() interface{} {
 	switch v.Type {
-	case TypeString:
-		return v.ValueString
 	case TypeBool:
 		return v.ValueBool
+	case TypeString:
+		return v.ValueString
 	case TypeInt64:
-		return v.ValueInt
+		return v.ValueInt64
 	case TypeUint64:
-		return v.ValueUint
+		return v.ValueUint64
 	case TypeFloat32:
 		return v.ValueFloat32
 	case TypeFloat64:
@@ -78,116 +46,105 @@ func (v *KeyValue) Get() interface{} {
 		return v.ValueInterface
 	}
 }
-func (v *KeyValue) Set(value interface{}) {
-	switch typedValue := value.(type) {
+func (v Field) Set(value interface{}) {
+	switch value := value.(type) {
 	case string:
-		v.SetString(typedValue)
+		v.Type = TypeString
+		v.ValueString = value
 	case bool:
-		v.SetBool(typedValue)
+		v.Type = TypeBool
+		v.ValueBool = value
 	case int:
-		v.SetInt(typedValue)
+		v.Type = TypeInt64
+		v.ValueInt64 = int64(value)
 	case int8:
-		v.SetInt64(int64(typedValue))
+		v.Type = TypeInt64
+		v.ValueInt64 = int64(value)
 	case int16:
-		v.SetInt64(int64(typedValue))
+		v.Type = TypeInt64
+		v.ValueInt64 = int64(value)
 	case int32:
-		v.SetInt64(int64(typedValue))
+		v.Type = TypeInt64
+		v.ValueInt64 = int64(value)
 	case int64:
-		v.SetInt64(typedValue)
+		v.Type = TypeInt64
+		v.ValueInt64 = value
 	case uint:
-		v.SetUint(typedValue)
+		v.Type = TypeUint64
+		v.ValueUint64 = uint64(value)
 	case uint8:
-		v.SetUint64(uint64(typedValue))
+		v.Type = TypeUint64
+		v.ValueUint64 = uint64(value)
 	case uint16:
-		v.SetUint64(uint64(typedValue))
+		v.Type = TypeUint64
+		v.ValueUint64 = uint64(value)
 	case uint32:
-		v.SetUint64(uint64(typedValue))
+		v.Type = TypeUint64
+		v.ValueUint64 = uint64(value)
 	case uint64:
-		v.SetUint64(typedValue)
+		v.Type = TypeUint64
+		v.ValueUint64 = value
 	case float32:
-		v.SetFloat32(typedValue)
+		v.Type = TypeFloat32
+		v.ValueFloat32 = value
 	case float64:
-		v.SetFloat64(typedValue)
+		v.Type = TypeFloat64
+		v.ValueFloat64 = value
 	default:
-		v.SetInterface(typedValue)
+		v.Type = TypeInterface
+		v.ValueInterface = value
+	}
+
+}
+
+func (v Field) String() string {
+	switch v.Type {
+	case TypeString:
+		return v.ValueString
+	case TypeBool:
+		return strconv.FormatBool(v.ValueBool)
+	case TypeInt64:
+		return strconv.FormatInt(v.ValueInt64, 10)
+	case TypeUint64:
+		return strconv.FormatUint(v.ValueUint64, 10)
+	case TypeFloat32:
+		return strconv.FormatFloat( float64(v.ValueFloat32), 'f', -1, 32)
+	case TypeFloat64:
+		return strconv.FormatFloat( v.ValueFloat64, 'f', -1, 64)
+	default:
+		return fmt.Sprintf("%v", v.ValueInterface)
 	}
 }
 
-func (v *KeyValue) GetString() string {
-	return v.ValueString
-}
-func (v *KeyValue) SetString(value string) {
-	v.Type = TypeString
-	v.ValueString = value
-}
 
-func (v *KeyValue) GetBool() bool {
-	return v.ValueBool
-}
-func (v *KeyValue) SetBool(value bool) {
-	v.Type = TypeBool
-	v.ValueBool = value
-}
 
-func (v *KeyValue) GetInt() int {
-	return int(v.ValueInt)
-}
-func (v *KeyValue) SetInt(value int) {
-	v.Type = TypeInt64
-	v.ValueInt = int64(value)
-}
 
-func (v *KeyValue) GetInt64() int64 {
-	return v.ValueInt
+func NewField(key string, value interface{}) (f Field) {
+	f = Field{Key: key}
+	f.Set(value)
+	return
 }
-func (v *KeyValue) SetInt64(value int64) {
-	v.Type = TypeInt64
-	v.ValueInt = value
+func String(key string, value string) Field {
+	return Field{Key: key, Type: TypeString, ValueString: value}
 }
-
-func (v *KeyValue) GetUint() uint {
-	return uint(v.ValueUint)
+func Bool(key string, value bool) Field {
+	return Field{Key: key, Type: TypeBool, ValueBool: value}
 }
-func (v *KeyValue) SetUint(value uint) {
-	v.Type = TypeUint64
-	v.ValueUint = uint64(value)
+func Int(key string, value int) Field {
+	return Field{Key: key, Type: TypeInt, ValueInt64: int64(value)}
 }
-
-func (v *KeyValue) GetUint64() uint64 {
-	return v.ValueUint
+func Int64(key string, value int64) Field {
+	return Field{Key: key, Type: TypeInt64, ValueInt64: value}
 }
-func (v *KeyValue) SetUint64(value uint64) {
-	v.Type = TypeUint64
-	v.ValueUint = value
+func Uint(key string, value uint) Field {
+	return Field{Key: key, Type: TypeUint, ValueUint64: uint64(value)}
 }
-
-func (v *KeyValue) GetFloat32() float32 {
-	return v.ValueFloat32
+func Uint64(key string, value uint64) Field {
+	return Field{Key: key, Type: TypeUint64, ValueUint64: value}
 }
-func (v *KeyValue) SetFloat32(value float32) {
-	v.Type = TypeFloat32
-	v.ValueFloat32 = value
+func Float32(key string, value float32) Field {
+	return Field{Key: key, Type: TypeFloat32, ValueFloat32: value}
 }
-
-func (v *KeyValue) GetFloat64() float64 {
-	return v.ValueFloat64
-}
-func (v *KeyValue) SetFloat64(value float64) {
-	v.Type = TypeFloat64
-	v.ValueFloat64 = value
-}
-
-func (v *KeyValue) GetInterface() interface{} {
-	return v.ValueInterface
-}
-func (v *KeyValue) SetInterface(value interface{}) {
-	v.Type = TypeInterface
-	v.ValueInterface = value
-}
-
-func (v *KeyValue) String() string {
-	if ( v.Type == TypeString ) {
-		return v.GetString()
-	}
-	return fmt.Sprint(v.Get())
+func Float64(key string, value float64) Field {
+	return Field{Key: key, Type: TypeFloat64, ValueFloat64: value}
 }

@@ -3,6 +3,11 @@ package meerkats
 
 var root = New(TRACE)
 
+func SetLevel(lvl Level) {
+	root.SetLevel(lvl)
+}
+
+
 func Register(hs ... Handler) {
 	root.Register(hs...)
 }
@@ -32,37 +37,37 @@ func AddFloat64(key string, value float64) {
 	root.AddFloat64(key, value)
 }
 func AddObject(key string, value interface{}) {
-	root.AddObject(key, value)
+	root.Add(key, value)
 }
-func With(fields ...KeyValue) {
+func With(fields ...Field) {
 	root.With(fields...)
 }
 
 
-func Log(level Level, msg string, fields ...KeyValue) {
+func Log(level Level, msg string, fields ...Field) {
 	root.Log(level, msg, fields...)
 }
 
 
-func Trace(msg string, fields ...KeyValue) {
+func Trace(msg string, fields ...Field) {
 	root.Trace(msg, fields...)
 }
 
-func Debug(msg string, fields ...KeyValue) {
+func Debug(msg string, fields ...Field) {
 	root.Debug(msg, fields...)
 }
-func Info(msg string, fields ...KeyValue) {
+func Info(msg string, fields ...Field) {
 	root.Info(msg, fields...)
 }
-func Warn(msg string, fields ...KeyValue) {
+func Warn(msg string, fields ...Field) {
 	root.Warn(msg, fields...)
 }
-func Error(msg string, fields ...KeyValue) {
+func Error(msg string, fields ...Field) {
 	root.Error(msg, fields...)
 }
-func Panic(msg string, fields ...KeyValue) {
+func Panic(msg string, fields ...Field) {
 	root.Panic(msg, fields...)
 }
-func Fatal(msg string, fields ...KeyValue) {
+func Fatal(msg string, fields ...Field) {
 	root.Fatal(msg, fields...)
 }
