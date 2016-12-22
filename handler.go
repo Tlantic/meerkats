@@ -10,6 +10,7 @@ type HandlerSet []Handler
 
 type Handler interface {
 	Encoder
+	LoggerOption
 
 	SetLevel(level Level)
 	GetLevel() Level
