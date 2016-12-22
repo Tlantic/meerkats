@@ -197,7 +197,7 @@ func (ctx *context) Clone() Logger {
 	c.metadata = map[string]string{}
 	c.Level = ctx.Level
 	for _, h := range ctx.handlers {
-		c.handlers = append(ctx.handlers, h.Clone())
+		c.handlers = append(c.handlers, h.Clone())
 	}
 	for k, v := range ctx.metadata {
 		c.metadata[k] = v
