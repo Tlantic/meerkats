@@ -1,15 +1,23 @@
 package meerkats
 
+import "sync"
 
+var mu = sync.Mutex{}
 var root = New(TRACE)
 
 func SetLevel(lvl Level) {
 	root.SetLevel(lvl)
 }
 
-
 func Register(hs ... Handler) {
 	root.Register(hs...)
+}
+
+func SetMeta(key string, value string) {
+	root.SetMeta(key, value)
+}
+func GetMeta(key string) string {
+	return root.GetMeta(key)
 }
 
 func AddBool(key string, value bool) {
