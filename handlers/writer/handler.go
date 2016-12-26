@@ -146,7 +146,7 @@ func (h *writerLogger) With(fs ...meerkats.Field) {
 }
 
 
-func (h *writerLogger) Log(t time.Time, level meerkats.Level, msg string, fields []meerkats.Field, _ map[string]string) {
+func (h *writerLogger) Log(t time.Time, level meerkats.Level, msg string, fields []meerkats.Field, _ map[string]string, done meerkats.DoneCallback) {
 	clone := pool.Get().(*writerLogger)
 	clone.bytes = append(append(append(clone.bytes, partial_lvl...), level.String()...))
 	if (h.timelayout != "") {
@@ -157,4 +157,5 @@ func (h *writerLogger) Log(t time.Time, level meerkats.Level, msg string, fields
 	clone.With(fields...)
 	h.w.Write(append(clone.bytes, '\n'))
 	clone.Dispose()
+	done()
 }

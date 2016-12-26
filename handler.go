@@ -3,10 +3,10 @@ package meerkats
 import "time"
 
 
+type DoneCallback func()
 
-
-type HandlerSet []Handler
-
+func NopCallback() {}
+var _ DoneCallback = NopCallback
 
 type Handler interface {
 	Encoder
@@ -15,7 +15,7 @@ type Handler interface {
 	SetLevel(level Level)
 	GetLevel() Level
 
-	Log(time.Time, Level, string, []Field, map[string]string)
+	Log(time.Time, Level, string, []Field, map[string]string, DoneCallback)
 
 	Clone() Handler
 	Dispose()

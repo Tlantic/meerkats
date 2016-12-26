@@ -114,7 +114,8 @@ func (ctx *context) Log(level Level, msg string, fields ...Field) {
 	if (ctx.Level <= level) {
 		now := time.Now()
 		for _, h := range ctx.handlers {
-			h.Log(now, level, msg, fields, ctx.metadata)
+			ctx.wg.Add(1)
+			h.Log(now, level, msg, fields, ctx.metadata, ctx.wg.Done)
 		}
 	}
 }
@@ -123,7 +124,8 @@ func (ctx *context) Trace(msg string, fields ...Field) {
 		now := time.Now()
 		for _, h := range ctx.handlers {
 			if ( h.GetLevel()&TRACE != 0 ) {
-				h.Log(now, TRACE, msg, fields, ctx.metadata)
+				ctx.wg.Add(1)
+				h.Log(now, TRACE, msg, fields, ctx.metadata, ctx.wg.Done)
 			}
 		}
 	}
@@ -133,7 +135,8 @@ func (ctx *context) Debug(msg string, fields ...Field) {
 		now := time.Now()
 		for _, h := range ctx.handlers {
 			if ( h.GetLevel()&DEBUG != 0 ) {
-				h.Log(now, DEBUG, msg, fields, ctx.metadata)
+				ctx.wg.Add(1)
+				h.Log(now, DEBUG, msg, fields, ctx.metadata, ctx.wg.Done)
 			}
 		}
 	}
@@ -143,7 +146,8 @@ func (ctx *context) Info(msg string, fields ...Field) {
 		now := time.Now()
 		for _, h := range ctx.handlers {
 			if ( h.GetLevel()&INFO != 0 ) {
-				h.Log(now, INFO, msg, fields, ctx.metadata)
+				ctx.wg.Add(1)
+				h.Log(now, INFO, msg, fields, ctx.metadata, ctx.wg.Done)
 			}
 		}
 	}
@@ -153,7 +157,8 @@ func (ctx *context) Warn(msg string, fields ...Field) {
 		now := time.Now()
 		for _, h := range ctx.handlers {
 			if ( h.GetLevel()&WARNING != 0 ) {
-				h.Log(now, WARNING, msg, fields, ctx.metadata)
+				ctx.wg.Add(1)
+				h.Log(now, WARNING, msg, fields, ctx.metadata, ctx.wg.Done)
 			}
 		}
 	}
@@ -163,7 +168,8 @@ func (ctx *context) Error(msg string, fields ...Field) {
 		now := time.Now()
 		for _, h := range ctx.handlers {
 			if ( h.GetLevel()&ERROR != 0 ) {
-				h.Log(now, ERROR, msg, fields, ctx.metadata)
+				ctx.wg.Add(1)
+				h.Log(now, ERROR, msg, fields, ctx.metadata, ctx.wg.Done)
 			}
 		}
 	}
@@ -173,7 +179,8 @@ func (ctx *context) Panic(msg string, fields ...Field) {
 		now := time.Now()
 		for _, h := range ctx.handlers {
 			if ( h.GetLevel()&PANIC != 0 ) {
-				h.Log(now, PANIC, msg, fields, ctx.metadata)
+				ctx.wg.Add(1)
+				h.Log(now, PANIC, msg, fields, ctx.metadata, ctx.wg.Done)
 			}
 		}
 	}
@@ -183,7 +190,8 @@ func (ctx *context) Fatal(msg string, fields ...Field) {
 		now := time.Now()
 		for _, h := range ctx.handlers {
 			if ( h.GetLevel()&FATAL != 0 ) {
-				h.Log(now, FATAL, msg, fields, ctx.metadata)
+				ctx.wg.Add(1)
+				h.Log(now, FATAL, msg, fields, ctx.metadata, ctx.wg.Done)
 			}
 		}
 	}
@@ -205,6 +213,7 @@ func (ctx *context) Clone() Logger {
 	return c
 }
 func (ctx *context) Dispose() () {
+	ctx.wg.Wait()
 	ctx.handlers = ctx.handlers[:0]
 	pool.Put(ctx)
 }
