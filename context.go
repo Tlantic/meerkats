@@ -3,6 +3,7 @@ package meerkats
 import (
 	"sync"
 	"time"
+	"os"
 )
 
 var pool = sync.Pool{
@@ -184,6 +185,8 @@ func (ctx *context) Panic(msg string, fields ...Field) {
 			}
 		}
 	}
+	ctx.Dispose()
+	panic(msg)
 }
 func (ctx *context) Fatal(msg string, fields ...Field) {
 	if (ctx.Level <= FATAL) {
@@ -195,6 +198,8 @@ func (ctx *context) Fatal(msg string, fields ...Field) {
 			}
 		}
 	}
+	ctx.Dispose()
+	os.Exit(1)
 }
 
 
