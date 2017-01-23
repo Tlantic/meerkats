@@ -1,9 +1,9 @@
 package meerkats
 
 import (
+	"os"
 	"sync"
 	"time"
-	"os"
 )
 
 var pool = sync.Pool{
@@ -16,17 +16,19 @@ var pool = sync.Pool{
 
 var _ Logger = (*context)(nil)
 type context struct {
-	metadata map[string]string
-	Level    Level
-	handlers []Handler
-	mu       sync.Mutex
-	wg       sync.WaitGroup
+	metadata 	map[string]string
+	Level    	Level
+	writerLevel Level
+	handlers 	[]Handler
+	mu       	sync.Mutex
+	wg       	sync.WaitGroup
 }
 
 func New(options...LoggerOption) Logger {
 	ctx := pool.Get().(*context)
 	ctx.metadata = make(map[string]string)
 	ctx.Level = TRACE
+	ctx.writerLevel = TRACE
 	for _, opt := range options {
 		opt.Apply(ctx)
 	}
@@ -203,6 +205,11 @@ func (ctx *context) Fatal(msg string, fields ...Field) {
 }
 
 
+func (ctx *context) Write(p []byte) (n int, err error) {
+	n = len(p)
+	ctx.Log(ctx.Level, string(p))
+	return
+}
 func (ctx *context) Clone() Logger {
 	defer ctx.mu.Unlock()
 	ctx.mu.Lock()
