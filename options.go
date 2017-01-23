@@ -31,6 +31,13 @@ func WithMeta(meta map[string]string) LoggerOption {
 	})
 }
 
+func WriterLevel(level Level) LoggerOption {
+	return LoggerReceiver(func(l Logger) {
+		if ctx, ok := l.(*context); ok {
+			ctx.writerLevel = level
+		}
+	})
+}
 
 type HandlerOption interface {
 	Apply(Handler)
