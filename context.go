@@ -4,6 +4,7 @@ import (
 	"os"
 	"sync"
 	"time"
+	"regexp"
 )
 
 var pool = sync.Pool{
@@ -205,9 +206,10 @@ func (ctx *context) Fatal(msg string, fields ...Field) {
 }
 
 
+var _reNewline = regexp.MustCompile(`\r?\n`)
 func (ctx *context) Write(p []byte) (n int, err error) {
 	n = len(p)
-	ctx.Log(ctx.Level, string(p))
+	ctx.Log(ctx.Level, _reNewline.ReplaceAllString(string(p), ""))
 	return
 }
 func (ctx *context) Clone() Logger {
