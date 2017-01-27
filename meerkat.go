@@ -79,3 +79,8 @@ func Panic(msg string, fields ...Field) {
 func Fatal(msg string, fields ...Field) {
 	root.Fatal(msg, fields...)
 }
+
+
+func Clone() Logger {
+	return root.Clone()
+}
