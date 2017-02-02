@@ -4,7 +4,7 @@
 **Meerkats** <sub>Structured Logger</sub>
 ===
 High performance, structured and flexible logging. Leverage the destination of your logs using context
-and handler levels setting up different levels for each handlers (i.e. write to *stdout* only when tracing
+and handler levels setting up different ones for each handlers (i.e. write to *stdout* only when tracing
 and to *syslog* only when an error occurs)<br>
 
 <br><br><br>
