@@ -5,7 +5,6 @@ import (
 	"strconv"
 )
 
-
 type FieldSet []Field
 
 type Field struct {
@@ -46,7 +45,7 @@ func (v Field) Get() interface{} {
 		return v.ValueInterface
 	}
 }
-func (v Field) Set(value interface{}) {
+func (v *Field) Set(value interface{}) {
 	switch value := value.(type) {
 	case string:
 		v.Type = TypeString
@@ -108,16 +107,13 @@ func (v Field) String() string {
 	case TypeUint64:
 		return strconv.FormatUint(v.ValueUint64, 10)
 	case TypeFloat32:
-		return strconv.FormatFloat( float64(v.ValueFloat32), 'f', -1, 32)
+		return strconv.FormatFloat(float64(v.ValueFloat32), 'f', -1, 32)
 	case TypeFloat64:
-		return strconv.FormatFloat( v.ValueFloat64, 'f', -1, 64)
+		return strconv.FormatFloat(v.ValueFloat64, 'f', -1, 64)
 	default:
 		return fmt.Sprintf("%v", v.ValueInterface)
 	}
 }
-
-
-
 
 func NewField(key string, value interface{}) (f Field) {
 	f = Field{Key: key}
@@ -131,7 +127,7 @@ func Bool(key string, value bool) Field {
 	return Field{Key: key, Type: TypeBool, ValueBool: value}
 }
 func Int(key string, value int) Field {
-	return Field{Key: key, Type: TypeInt, ValueInt64: int64(value)}
+	return Field{Key: key, Type: TypeInt64, ValueInt64: int64(value)}
 }
 func Int64(key string, value int64) Field {
 	return Field{Key: key, Type: TypeInt64, ValueInt64: value}
