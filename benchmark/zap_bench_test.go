@@ -7,8 +7,6 @@ import (
 	"github.com/uber-go/zap"
 )
 
-
-
 func zap_fakeFields() []zap.Field {
 	return []zap.Field{
 		zap.Int("int", 1),
@@ -28,7 +26,6 @@ func zap_fakeMessages(n int) []string {
 	}
 	return messages
 }
-
 
 func BenchmarkZapNew(b *testing.B) {
 	b.ResetTimer()
@@ -73,8 +70,6 @@ func BenchmarkZapDisabledLogWithPredefinedFields(b *testing.B) {
 	})
 }
 
-
-
 func BenchmarkZapDisabledLogWithFields(b *testing.B) {
 	logger := zap.New(
 		zap.NewTextEncoder(),
@@ -87,12 +82,6 @@ func BenchmarkZapDisabledLogWithFields(b *testing.B) {
 		}
 	})
 }
-
-
-
-
-
-
 
 func BenchmarkZapLog(b *testing.B) {
 	logger := zap.New(zap.NewTextEncoder(), zap.DiscardOutput)
@@ -113,8 +102,6 @@ func BenchmarkZapLogWithPredefinedFields(b *testing.B) {
 		}
 	})
 }
-
-
 
 func BenchmarkZapLogWithFields(b *testing.B) {
 	logger := zap.New(

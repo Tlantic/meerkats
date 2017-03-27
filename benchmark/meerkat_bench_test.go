@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-
-	"github.com/Tlantic/meerkats/handlers/writer"
 	"github.com/Tlantic/meerkats"
+	"github.com/Tlantic/meerkats/handlers/writer"
 )
 
 func meerkat_fakeFields() []meerkats.Field {
@@ -49,8 +48,6 @@ func BenchmarkMeerkatsNewWithPredefinedFields(b *testing.B) {
 	})
 }
 
-
-
 func BenchmarkMeerkatsDisabledLog(b *testing.B) {
 	logger := meerkats.New(meerkats.PANIC, writer.Register())
 	b.ResetTimer()
@@ -80,10 +77,6 @@ func BenchmarkMeerkatsDisabledLogWithFields(b *testing.B) {
 		}
 	})
 }
-
-
-
-
 
 func BenchmarkMeerkatsLog(b *testing.B) {
 	logger := meerkats.New(writer.New(writer.DiscardOutput))

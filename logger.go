@@ -28,11 +28,11 @@ type Logger interface {
 	Dispose()
 }
 
-
 type StandardLogger struct {
 	Logger
-	level  Level
+	level Level
 }
+
 func NewStandardLogger(logger Logger, printLevel Level) *StandardLogger {
 	return &StandardLogger{logger, printLevel}
 }

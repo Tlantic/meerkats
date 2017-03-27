@@ -9,7 +9,7 @@ func SetLevel(lvl Level) {
 	root.SetLevel(lvl)
 }
 
-func Register(hs ... Handler) {
+func Register(hs ...Handler) {
 	root.Register(hs...)
 }
 
@@ -44,6 +44,12 @@ func AddFloat32(key string, value float32) {
 func AddFloat64(key string, value float64) {
 	root.AddFloat64(key, value)
 }
+func AddJSON(key string, value interface{}) {
+	root.AddJSON(key, value)
+}
+func AddError(err error) {
+	root.AddError(err)
+}
 func AddObject(key string, value interface{}) {
 	root.Add(key, value)
 }
@@ -51,11 +57,9 @@ func With(fields ...Field) {
 	root.With(fields...)
 }
 
-
 func Log(level Level, msg string, fields ...Field) {
 	root.Log(level, msg, fields...)
 }
-
 
 func Trace(msg string, fields ...Field) {
 	root.Trace(msg, fields...)
@@ -79,7 +83,6 @@ func Panic(msg string, fields ...Field) {
 func Fatal(msg string, fields ...Field) {
 	root.Fatal(msg, fields...)
 }
-
 
 func Clone() Logger {
 	return root.Clone()

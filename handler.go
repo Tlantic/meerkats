@@ -2,10 +2,10 @@ package meerkats
 
 import "time"
 
-
 type DoneCallback func()
 
 func NopCallback() {}
+
 var _ DoneCallback = NopCallback
 
 type Handler interface {

@@ -1,8 +1,8 @@
 package benchmark
 
 import (
-	"time"
 	"errors"
+	"time"
 )
 
 var errExample = errors.New("fail")
