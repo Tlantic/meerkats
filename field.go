@@ -89,6 +89,9 @@ func (v *Field) Set(value interface{}) {
 	case float64:
 		v.Type = TypeFloat64
 		v.ValueFloat64 = value
+	case error:
+		v.Type = TypeError
+		v.ValueInterface = value
 	default:
 		v.Type = TypeInterface
 		v.ValueInterface = value
@@ -143,4 +146,10 @@ func Float32(key string, value float32) Field {
 }
 func Float64(key string, value float64) Field {
 	return Field{Key: key, Type: TypeFloat64, ValueFloat64: value}
+}
+func JSON(key string, value interface{}) Field {
+	return Field{Key: key, Type: TypeJSON, ValueInterface: value}
+}
+func ErrorString(err error) Field {
+	return Field{Key: "error", Type: TypeError, ValueInterface: err}
 }

@@ -1,6 +1,5 @@
 package meerkats
 
-
 type LoggerReceiver func(Logger)
 
 func (f LoggerReceiver) Apply(l Logger) {

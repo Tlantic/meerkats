@@ -2,9 +2,9 @@ package meerkats
 
 import (
 	"os"
+	"regexp"
 	"sync"
 	"time"
-	"regexp"
 )
 
 var pool = sync.Pool{
@@ -16,16 +16,17 @@ var pool = sync.Pool{
 }
 
 var _ Logger = (*context)(nil)
+
 type context struct {
-	metadata 	map[string]string
-	Level    	Level
+	metadata    map[string]string
+	Level       Level
 	writerLevel Level
-	handlers 	[]Handler
-	mu       	sync.Mutex
-	wg       	sync.WaitGroup
+	handlers    []Handler
+	mu          sync.Mutex
+	wg          sync.WaitGroup
 }
 
-func New(options...LoggerOption) Logger {
+func New(options ...LoggerOption) Logger {
 	ctx := pool.Get().(*context)
 	ctx.metadata = make(map[string]string)
 	ctx.Level = TRACE
@@ -35,7 +36,7 @@ func New(options...LoggerOption) Logger {
 	}
 	return ctx
 }
-func From( parent Logger, options...LoggerOption) ( ctx  Logger) {
+func From(parent Logger, options ...LoggerOption) (ctx Logger) {
 	ctx = parent.Clone()
 	for _, opt := range options {
 		opt.Apply(ctx)
@@ -43,12 +44,11 @@ func From( parent Logger, options...LoggerOption) ( ctx  Logger) {
 	return
 }
 
-
 func (ctx *context) SetLevel(lvl Level) {
 	ctx.Level = lvl
 }
 
-func (ctx *context) Register(hs ... Handler) {
+func (ctx *context) Register(hs ...Handler) {
 	ctx.mu.Lock()
 	defer ctx.mu.Unlock()
 	ctx.handlers = append(ctx.handlers, hs...)
@@ -60,7 +60,6 @@ func (ctx *context) SetMeta(key string, value string) {
 func (ctx *context) GetMeta(key string) string {
 	return ctx.metadata[key]
 }
-
 
 func (ctx *context) AddBool(key string, value bool) {
 	for _, h := range ctx.handlers {
@@ -102,6 +101,16 @@ func (ctx *context) AddFloat64(key string, value float64) {
 		h.AddFloat64(key, value)
 	}
 }
+func (ctx *context) AddJSON(key string, value interface{}) {
+	for _, h := range ctx.handlers {
+		h.AddJSON(key, value)
+	}
+}
+func (ctx *context) AddError(err error) {
+	for _, h := range ctx.handlers {
+		h.AddError(err)
+	}
+}
 func (ctx *context) Add(key string, value interface{}) {
 	for _, h := range ctx.handlers {
 		h.Add(key, value)
@@ -113,9 +122,8 @@ func (ctx *context) With(fields ...Field) {
 	}
 }
 
-
 func (ctx *context) Log(level Level, msg string, fields ...Field) {
-	if (ctx.Level <= level) {
+	if ctx.Level <= level {
 		now := time.Now()
 		for _, h := range ctx.handlers {
 			ctx.wg.Add(1)
@@ -124,10 +132,10 @@ func (ctx *context) Log(level Level, msg string, fields ...Field) {
 	}
 }
 func (ctx *context) Trace(msg string, fields ...Field) {
-	if (ctx.Level <= TRACE) {
+	if ctx.Level <= TRACE {
 		now := time.Now()
 		for _, h := range ctx.handlers {
-			if ( h.GetLevel()&TRACE != 0 ) {
+			if h.GetLevel()&TRACE != 0 {
 				ctx.wg.Add(1)
 				h.Log(now, TRACE, msg, fields, ctx.metadata, ctx.wg.Done)
 			}
@@ -135,10 +143,10 @@ func (ctx *context) Trace(msg string, fields ...Field) {
 	}
 }
 func (ctx *context) Debug(msg string, fields ...Field) {
-	if (ctx.Level <= DEBUG) {
+	if ctx.Level <= DEBUG {
 		now := time.Now()
 		for _, h := range ctx.handlers {
-			if ( h.GetLevel()&DEBUG != 0 ) {
+			if h.GetLevel()&DEBUG != 0 {
 				ctx.wg.Add(1)
 				h.Log(now, DEBUG, msg, fields, ctx.metadata, ctx.wg.Done)
 			}
@@ -149,7 +157,7 @@ func (ctx *context) Info(msg string, fields ...Field) {
 	if ctx.Level <= INFO {
 		now := time.Now()
 		for _, h := range ctx.handlers {
-			if ( h.GetLevel()&INFO != 0 ) {
+			if h.GetLevel()&INFO != 0 {
 				ctx.wg.Add(1)
 				h.Log(now, INFO, msg, fields, ctx.metadata, ctx.wg.Done)
 			}
@@ -157,10 +165,10 @@ func (ctx *context) Info(msg string, fields ...Field) {
 	}
 }
 func (ctx *context) Warn(msg string, fields ...Field) {
-	if (ctx.Level <= WARNING) {
+	if ctx.Level <= WARNING {
 		now := time.Now()
 		for _, h := range ctx.handlers {
-			if ( h.GetLevel()&WARNING != 0 ) {
+			if h.GetLevel()&WARNING != 0 {
 				ctx.wg.Add(1)
 				h.Log(now, WARNING, msg, fields, ctx.metadata, ctx.wg.Done)
 			}
@@ -168,10 +176,10 @@ func (ctx *context) Warn(msg string, fields ...Field) {
 	}
 }
 func (ctx *context) Error(msg string, fields ...Field) {
-	if (ctx.Level <= ERROR) {
+	if ctx.Level <= ERROR {
 		now := time.Now()
 		for _, h := range ctx.handlers {
-			if ( h.GetLevel()&ERROR != 0 ) {
+			if h.GetLevel()&ERROR != 0 {
 				ctx.wg.Add(1)
 				h.Log(now, ERROR, msg, fields, ctx.metadata, ctx.wg.Done)
 			}
@@ -179,10 +187,10 @@ func (ctx *context) Error(msg string, fields ...Field) {
 	}
 }
 func (ctx *context) Panic(msg string, fields ...Field) {
-	if (ctx.Level <= PANIC) {
+	if ctx.Level <= PANIC {
 		now := time.Now()
 		for _, h := range ctx.handlers {
-			if ( h.GetLevel()&PANIC != 0 ) {
+			if h.GetLevel()&PANIC != 0 {
 				ctx.wg.Add(1)
 				h.Log(now, PANIC, msg, fields, ctx.metadata, ctx.wg.Done)
 			}
@@ -192,10 +200,10 @@ func (ctx *context) Panic(msg string, fields ...Field) {
 	panic(msg)
 }
 func (ctx *context) Fatal(msg string, fields ...Field) {
-	if (ctx.Level <= FATAL) {
+	if ctx.Level <= FATAL {
 		now := time.Now()
 		for _, h := range ctx.handlers {
-			if ( h.GetLevel()&FATAL != 0 ) {
+			if h.GetLevel()&FATAL != 0 {
 				ctx.wg.Add(1)
 				h.Log(now, FATAL, msg, fields, ctx.metadata, ctx.wg.Done)
 			}
@@ -205,8 +213,8 @@ func (ctx *context) Fatal(msg string, fields ...Field) {
 	os.Exit(1)
 }
 
-
 var _reNewline = regexp.MustCompile(`\r?\n`)
+
 func (ctx *context) Write(p []byte) (n int, err error) {
 	n = len(p)
 	ctx.Log(ctx.Level, _reNewline.ReplaceAllString(string(p), ""))
@@ -226,11 +234,8 @@ func (ctx *context) Clone() Logger {
 	}
 	return c
 }
-func (ctx *context) Dispose() () {
+func (ctx *context) Dispose() {
 	ctx.wg.Wait()
 	ctx.handlers = ctx.handlers[:0]
 	pool.Put(ctx)
 }
-
-
-

@@ -22,4 +22,6 @@ const (
 	TypeComplex128
 	TypeString
 	TypeUnsafePointer
+	TypeJSON
+	TypeError
 )

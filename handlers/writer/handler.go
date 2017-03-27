@@ -1,18 +1,20 @@
 package writer
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
 	"io"
 	"os"
-	"fmt"
-	"time"
 	"sync"
+	"time"
 
 	"github.com/Tlantic/meerkats"
 )
 
 var (
 	partial_lvl = []byte("level=\"")
-	partial_ts = []byte("\" timestamp=\"")
+	partial_ts  = []byte("\" timestamp=\"")
 	partial_msg = []byte("\" message=\"")
 )
 
@@ -20,19 +22,20 @@ var buffSize = 2048
 var pool = sync.Pool{New: func() interface{} {
 	return &writerLogger{
 		Level: meerkats.LEVEL_ALL,
-		timelayout: time.RFC3339Nano,
-		w: os.Stdout,
+		tl:    time.RFC3339Nano,
+		w:     os.Stdout,
 		bytes: make([]byte, 0, buffSize),
 	}
 }}
 
 var _ meerkats.Handler = (*writerLogger)(nil)
+
 type writerLogger struct {
-	Level      meerkats.Level
-	timelayout string
-	mu         sync.Mutex
-	bytes      []byte
-	w          io.Writer
+	Level meerkats.Level
+	tl    string
+	mu    sync.Mutex
+	bytes []byte
+	w     io.Writer
 }
 
 func New(options ...meerkats.HandlerOption) (h *writerLogger) {
@@ -61,7 +64,7 @@ func (h *writerLogger) GetLevel() meerkats.Level {
 }
 func (h *writerLogger) Dispose() {
 	h.Level = meerkats.LEVEL_ALL
-	h.timelayout = time.RFC3339Nano
+	h.tl = time.RFC3339Nano
 	h.w = os.Stdout
 	h.bytes = h.bytes[:0]
 	pool.Put(h)
@@ -73,17 +76,16 @@ func (h *writerLogger) Clone() meerkats.Handler {
 	clone.w = h.w
 	clone.bytes = h.bytes[0:]
 	clone.Level = h.Level
-	clone.timelayout = h.timelayout
+	clone.tl = h.tl
 	return clone
 }
-
 
 func (h *writerLogger) AddBool(key string, value bool) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
 	h.bytes = appendBool(h.bytes, key, value)
 }
-func (h *writerLogger) AddString(key string, value string){
+func (h *writerLogger) AddString(key string, value string) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
 	h.bytes = appendString(h.bytes, key, value)
@@ -103,12 +105,12 @@ func (h *writerLogger) AddUint(key string, value uint) {
 	h.mu.Lock()
 	h.bytes = appendUint64(h.bytes, key, uint64(value))
 }
-func (h *writerLogger) AddUint64(key string, value uint64)  {
+func (h *writerLogger) AddUint64(key string, value uint64) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
 	h.bytes = appendUint64(h.bytes, key, value)
 }
-func (h *writerLogger) AddFloat32(key string, value float32)  {
+func (h *writerLogger) AddFloat32(key string, value float32) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
 	h.bytes = appendFloat32(h.bytes, key, value)
@@ -117,6 +119,19 @@ func (h *writerLogger) AddFloat64(key string, value float64) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
 	h.bytes = appendFloat64(h.bytes, key, value)
+}
+func (h *writerLogger) AddJSON(key string, value interface{}) {
+	defer h.mu.Unlock()
+	h.mu.Lock()
+
+	b := bytes.NewBuffer([]byte{})
+	json.NewEncoder(b).Encode(value)
+	h.bytes = appendString(h.bytes, key, b.String())
+}
+func (h *writerLogger) AddError(err error) {
+	defer h.mu.Unlock()
+	h.mu.Lock()
+	h.bytes = appendString(h.bytes, "error", err.Error())
 }
 func (h *writerLogger) Add(key string, value interface{}) {
 	defer h.mu.Unlock()
@@ -139,19 +154,22 @@ func (h *writerLogger) With(fs ...meerkats.Field) {
 			h.AddFloat32(v.Key, v.ValueFloat32)
 		case meerkats.TypeFloat64:
 			h.AddFloat64(v.Key, v.ValueFloat64)
+		case meerkats.TypeError:
+			h.AddError(v.ValueInterface.(error))
+		case meerkats.TypeJSON:
+			h.AddJSON(v.Key, v.ValueInterface)
 		default:
 			h.Add(v.Key, v.ValueInterface)
 		}
 	}
 }
 
-
 func (h *writerLogger) Log(t time.Time, level meerkats.Level, msg string, fields []meerkats.Field, _ map[string]string, done meerkats.DoneCallback) {
 	clone := pool.Get().(*writerLogger)
 	clone.bytes = append(append(append(clone.bytes, partial_lvl...), level.String()...))
-	if (h.timelayout != "") {
+	if h.tl != "" {
 		clone.bytes = append(clone.bytes, partial_ts...)
-		clone.bytes = t.AppendFormat(clone.bytes, h.timelayout)
+		clone.bytes = t.AppendFormat(clone.bytes, h.tl)
 	}
 	clone.bytes = append(append(append(append(clone.bytes, partial_msg...), msg...), '"'), h.bytes[0:]...)
 	clone.With(fields...)
