@@ -1,5 +1,10 @@
 package meerkats
 
+import (
+	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/log"
+)
+
 type LoggerReceiver func(Logger)
 
 func (f LoggerReceiver) Apply(l Logger) {
@@ -10,15 +15,21 @@ type LoggerOption interface {
 	Apply(Logger)
 }
 
+func WithSpan(span opentracing.Span) LoggerOption {
+	return LoggerReceiver(func(l Logger) {
+		l.WithSpan(span)
+	})
+}
+
 func WithLevel(level Level) LoggerOption {
 	return LoggerReceiver(func(l Logger) {
 		l.SetLevel(level)
 	})
 }
 
-func WithFields(fs ...Field) LoggerOption {
+func WithFields(fs ...log.Field) LoggerOption {
 	return LoggerReceiver(func(l Logger) {
-		l.With(fs...)
+		l.EmitField(fs...)
 	})
 }
 

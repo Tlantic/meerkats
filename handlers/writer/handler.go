@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Tlantic/meerkats"
+	"github.com/opentracing/opentracing-go/log"
 )
 
 var (
@@ -80,45 +81,103 @@ func (h *writerLogger) Clone() meerkats.Handler {
 	return clone
 }
 
+func (h *writerLogger) EmitBool(key string, value bool) {
+	defer h.mu.Unlock()
+	h.mu.Lock()
+	h.bytes = appendBool(h.bytes, key, value)
+}
 func (h *writerLogger) AddBool(key string, value bool) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
 	h.bytes = appendBool(h.bytes, key, value)
+}
+func (h *writerLogger) EmitString(key string, value string) {
+	defer h.mu.Unlock()
+	h.mu.Lock()
+	h.bytes = appendString(h.bytes, key, value)
 }
 func (h *writerLogger) AddString(key string, value string) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
 	h.bytes = appendString(h.bytes, key, value)
 }
+func (h *writerLogger) EmitInt(key string, value int) {
+	defer h.mu.Unlock()
+	h.mu.Lock()
+	h.bytes = appendInt64(h.bytes, key, int64(value))
+}
 func (h *writerLogger) AddInt(key string, value int) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
 	h.bytes = appendInt64(h.bytes, key, int64(value))
+}
+func (h *writerLogger) EmitInt32(key string, value int32) {
+	defer h.mu.Unlock()
+	h.mu.Lock()
+	h.bytes = appendInt64(h.bytes, key, int64(value))
+}
+func (h *writerLogger) EmitInt64(key string, value int64) {
+	defer h.mu.Unlock()
+	h.mu.Lock()
+	h.bytes = appendInt64(h.bytes, key, value)
 }
 func (h *writerLogger) AddInt64(key string, value int64) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
 	h.bytes = appendInt64(h.bytes, key, value)
 }
+func (h *writerLogger) EmitUint(key string, value uint) {
+	defer h.mu.Unlock()
+	h.mu.Lock()
+	h.bytes = appendUint64(h.bytes, key, uint64(value))
+}
 func (h *writerLogger) AddUint(key string, value uint) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
 	h.bytes = appendUint64(h.bytes, key, uint64(value))
+}
+func (h *writerLogger) EmitUint32(key string, value uint32) {
+	defer h.mu.Unlock()
+	h.mu.Lock()
+	h.bytes = appendUint64(h.bytes, key, uint64(value))
+}
+func (h *writerLogger) EmitUint64(key string, value uint64) {
+	defer h.mu.Unlock()
+	h.mu.Lock()
+	h.bytes = appendUint64(h.bytes, key, value)
 }
 func (h *writerLogger) AddUint64(key string, value uint64) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
 	h.bytes = appendUint64(h.bytes, key, value)
 }
+func (h *writerLogger) EmitFloat32(key string, value float32) {
+	defer h.mu.Unlock()
+	h.mu.Lock()
+	h.bytes = appendFloat32(h.bytes, key, value)
+}
 func (h *writerLogger) AddFloat32(key string, value float32) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
 	h.bytes = appendFloat32(h.bytes, key, value)
 }
+func (h *writerLogger) EmitFloat64(key string, value float64) {
+	defer h.mu.Unlock()
+	h.mu.Lock()
+	h.bytes = appendFloat64(h.bytes, key, value)
+}
 func (h *writerLogger) AddFloat64(key string, value float64) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
 	h.bytes = appendFloat64(h.bytes, key, value)
+}
+func (h *writerLogger) EmitJSON(key string, value interface{}) {
+	defer h.mu.Unlock()
+	h.mu.Lock()
+
+	b := bytes.NewBuffer([]byte{})
+	json.NewEncoder(b).Encode(value)
+	h.bytes = appendString(h.bytes, key, b.String())
 }
 func (h *writerLogger) AddJSON(key string, value interface{}) {
 	defer h.mu.Unlock()
@@ -128,10 +187,23 @@ func (h *writerLogger) AddJSON(key string, value interface{}) {
 	json.NewEncoder(b).Encode(value)
 	h.bytes = appendString(h.bytes, key, b.String())
 }
+func (h *writerLogger) EmitError(err error) {
+	defer h.mu.Unlock()
+	h.mu.Lock()
+	h.bytes = appendString(h.bytes, "error", err.Error())
+}
 func (h *writerLogger) AddError(err error) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
 	h.bytes = appendString(h.bytes, "error", err.Error())
+}
+func (h *writerLogger) EmitObject(key string, value interface{}) {
+	defer h.mu.Unlock()
+	h.mu.Lock()
+	h.bytes = appendString(h.bytes, key, fmt.Sprintf("%+v", value))
+}
+func (h *writerLogger) EmitLazyLogger(value log.LazyLogger) {
+	value(h)
 }
 func (h *writerLogger) Add(key string, value interface{}) {
 	defer h.mu.Unlock()
@@ -139,6 +211,11 @@ func (h *writerLogger) Add(key string, value interface{}) {
 	h.bytes = appendString(h.bytes, key, fmt.Sprintf("%+v", value))
 }
 
+func (h *writerLogger) EmitField(fs ...log.Field) {
+	for _, v := range fs {
+		v.Marshal(h)
+	}
+}
 func (h *writerLogger) With(fs ...meerkats.Field) {
 	for _, v := range fs {
 		switch v.Type {
@@ -164,7 +241,7 @@ func (h *writerLogger) With(fs ...meerkats.Field) {
 	}
 }
 
-func (h *writerLogger) Log(t time.Time, level meerkats.Level, msg string, fields []meerkats.Field, _ map[string]string, done meerkats.DoneCallback) {
+func (h *writerLogger) Log(t time.Time, level meerkats.Level, msg string, fields []log.Field, _ map[string]interface{}, done meerkats.DoneCallback) {
 	clone := pool.Get().(*writerLogger)
 	clone.bytes = append(append(append(clone.bytes, partial_lvl...), level.String()...))
 	if h.tl != "" {
@@ -172,7 +249,7 @@ func (h *writerLogger) Log(t time.Time, level meerkats.Level, msg string, fields
 		clone.bytes = t.AppendFormat(clone.bytes, h.tl)
 	}
 	clone.bytes = append(append(append(append(clone.bytes, partial_msg...), msg...), '"'), h.bytes[0:]...)
-	clone.With(fields...)
+	clone.EmitField(fields...)
 	h.w.Write(append(clone.bytes, '\n'))
 	clone.Dispose()
 	done()

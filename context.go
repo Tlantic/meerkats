@@ -1,6 +1,8 @@
 package meerkats
 
 import (
+	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/log"
 	"os"
 	"regexp"
 	"sync"
@@ -17,23 +19,34 @@ var pool = sync.Pool{
 
 var _ Logger = (*context)(nil)
 
+type ctxKey uint8
+
+const (
+	uniqueKey ctxKey = iota
+)
+
 type context struct {
-	metadata    map[string]string
+	handlerMu   sync.Mutex
+	spanMu      sync.Mutex
+	wg          sync.WaitGroup
+	opName      string
+	span        opentracing.Span
 	Level       Level
 	writerLevel Level
+	metadata    map[string]interface{}
 	handlers    []Handler
-	mu          sync.Mutex
-	wg          sync.WaitGroup
 }
 
 func New(options ...LoggerOption) Logger {
 	ctx := pool.Get().(*context)
-	ctx.metadata = make(map[string]string)
+	ctx.metadata = make(map[string]interface{})
 	ctx.Level = TRACE
 	ctx.writerLevel = TRACE
-	for _, opt := range options {
+
+	for _, opt := range append(append(([]LoggerOption)(nil), newSpanHandler()), options...) {
 		opt.Apply(ctx)
 	}
+
 	return ctx
 }
 func From(parent Logger, options ...LoggerOption) (ctx Logger) {
@@ -44,85 +57,220 @@ func From(parent Logger, options ...LoggerOption) (ctx Logger) {
 	return
 }
 
+func (ctx *context) OperationName() string {
+	return ctx.opName
+}
+func (ctx *context) SetOperationName(name string) {
+	ctx.span.SetOperationName(name)
+	ctx.opName = name
+}
+func (ctx *context) Span() (span opentracing.Span) {
+	ctx.spanMu.Lock()
+	defer ctx.spanMu.Unlock()
+	if ctx.span == nil {
+		ctx.span = opentracing.StartSpan(ctx.OperationName())
+		for k, v := range ctx.metadata {
+			ctx.span.SetTag(k, v)
+		}
+	}
+	return ctx.span
+}
+func (ctx *context) WithSpan(span opentracing.Span) {
+	if span != nil {
+		span = span.Tracer().StartSpan(ctx.OperationName(),
+			opentracing.SpanReference{
+				Type:              opentracing.FollowsFromRef,
+				ReferencedContext: ctx.Span().Context(),
+			}, opentracing.SpanReference{
+				Type:              opentracing.ChildOfRef,
+				ReferencedContext: span.Context(),
+			})
+
+		ctx.spanMu.Lock()
+		for k, v := range ctx.metadata {
+			span.SetTag(k, v)
+		}
+		ctx.span = span
+		ctx.spanMu.Unlock()
+	}
+}
 func (ctx *context) SetLevel(lvl Level) {
 	ctx.Level = lvl
 }
 
 func (ctx *context) Register(hs ...Handler) {
-	ctx.mu.Lock()
-	defer ctx.mu.Unlock()
+	ctx.handlerMu.Lock()
+	defer ctx.handlerMu.Unlock()
 	ctx.handlers = append(ctx.handlers, hs...)
 }
 
+// Deprecate: Use SetTag
 func (ctx *context) SetMeta(key string, value string) {
+	ctx.SetTag(key, value)
+}
+func (ctx *context) SetTag(key string, value interface{}) {
+	ctx.Span().SetTag(key, value)
 	ctx.metadata[key] = value
 }
+
+// Deprecate: Use GetTag
 func (ctx *context) GetMeta(key string) string {
+	s, _ := ctx.metadata[key].(string)
+	return s
+}
+func (ctx *context) GetTag(key string) interface{} {
 	return ctx.metadata[key]
 }
 
+func (ctx *context) EmitBool(key string, value bool) {
+	for _, h := range ctx.handlers {
+		h.EmitBool(key, value)
+	}
+}
 func (ctx *context) AddBool(key string, value bool) {
 	for _, h := range ctx.handlers {
-		h.AddBool(key, value)
+		h.EmitBool(key, value)
+	}
+}
+
+func (ctx *context) EmitString(key string, value string) {
+	for _, h := range ctx.handlers {
+		h.EmitString(key, value)
 	}
 }
 func (ctx *context) AddString(key string, value string) {
 	for _, h := range ctx.handlers {
-		h.AddString(key, value)
+		h.EmitString(key, value)
+	}
+}
+
+func (ctx *context) EmitInt(key string, value int) {
+	for _, h := range ctx.handlers {
+		h.EmitInt(key, value)
 	}
 }
 func (ctx *context) AddInt(key string, value int) {
 	for _, h := range ctx.handlers {
-		h.AddInt(key, value)
+		h.EmitInt(key, value)
+	}
+}
+
+func (ctx *context) EmitInt32(key string, value int32) {
+	for _, h := range ctx.handlers {
+		h.EmitInt32(key, value)
+	}
+}
+
+func (ctx *context) EmitInt64(key string, value int64) {
+	for _, h := range ctx.handlers {
+		h.EmitInt64(key, value)
 	}
 }
 func (ctx *context) AddInt64(key string, value int64) {
 	for _, h := range ctx.handlers {
-		h.AddInt64(key, value)
+		h.EmitInt64(key, value)
+	}
+}
+
+func (ctx *context) EmitUint(key string, value uint) {
+	for _, h := range ctx.handlers {
+		h.EmitUint(key, value)
 	}
 }
 func (ctx *context) AddUint(key string, value uint) {
 	for _, h := range ctx.handlers {
-		h.AddUint(key, value)
+		h.EmitUint(key, value)
+	}
+}
+func (ctx *context) EmitUint32(key string, value uint32) {
+	for _, h := range ctx.handlers {
+		h.EmitUint32(key, value)
+	}
+}
+func (ctx *context) EmitUint64(key string, value uint64) {
+	for _, h := range ctx.handlers {
+		h.EmitUint64(key, value)
 	}
 }
 func (ctx *context) AddUint64(key string, value uint64) {
 	for _, h := range ctx.handlers {
-		h.AddUint64(key, value)
+		h.EmitUint64(key, value)
+	}
+}
+
+func (ctx *context) EmitFloat32(key string, value float32) {
+	for _, h := range ctx.handlers {
+		h.EmitFloat32(key, value)
 	}
 }
 func (ctx *context) AddFloat32(key string, value float32) {
 	for _, h := range ctx.handlers {
-		h.AddFloat32(key, value)
+		h.EmitFloat32(key, value)
+	}
+}
+
+func (ctx *context) EmitFloat64(key string, value float64) {
+	for _, h := range ctx.handlers {
+		h.EmitFloat64(key, value)
 	}
 }
 func (ctx *context) AddFloat64(key string, value float64) {
 	for _, h := range ctx.handlers {
-		h.AddFloat64(key, value)
+		h.EmitFloat64(key, value)
+	}
+}
+
+func (ctx *context) EmitJSON(key string, value interface{}) {
+	for _, h := range ctx.handlers {
+		h.EmitJSON(key, value)
 	}
 }
 func (ctx *context) AddJSON(key string, value interface{}) {
 	for _, h := range ctx.handlers {
-		h.AddJSON(key, value)
+		h.EmitJSON(key, value)
+	}
+}
+
+func (ctx *context) EmitError(err error) {
+	for _, h := range ctx.handlers {
+		h.EmitError(err)
 	}
 }
 func (ctx *context) AddError(err error) {
 	for _, h := range ctx.handlers {
-		h.AddError(err)
+		h.EmitError(err)
+	}
+}
+
+func (ctx *context) EmitObject(key string, value interface{}) {
+	for _, h := range ctx.handlers {
+		h.EmitObject(key, value)
 	}
 }
 func (ctx *context) Add(key string, value interface{}) {
 	for _, h := range ctx.handlers {
-		h.Add(key, value)
+		h.EmitObject(key, value)
 	}
 }
+
 func (ctx *context) With(fields ...Field) {
 	for _, h := range ctx.handlers {
 		h.With(fields...)
 	}
 }
+func (ctx *context) EmitField(fields ...log.Field) {
+	for _, h := range ctx.handlers {
+		h.EmitField(fields...)
+	}
+}
 
-func (ctx *context) Log(level Level, msg string, fields ...Field) {
+func (ctx *context) EmitLazyLogger(value log.LazyLogger) {
+	for _, h := range ctx.handlers {
+		h.EmitLazyLogger(value)
+	}
+}
+
+func (ctx *context) Log(level Level, msg string, fields ...log.Field) {
 	if ctx.Level <= level {
 		now := time.Now()
 		for _, h := range ctx.handlers {
@@ -131,7 +279,7 @@ func (ctx *context) Log(level Level, msg string, fields ...Field) {
 		}
 	}
 }
-func (ctx *context) Trace(msg string, fields ...Field) {
+func (ctx *context) Trace(msg string, fields ...log.Field) {
 	if ctx.Level <= TRACE {
 		now := time.Now()
 		for _, h := range ctx.handlers {
@@ -142,7 +290,7 @@ func (ctx *context) Trace(msg string, fields ...Field) {
 		}
 	}
 }
-func (ctx *context) Debug(msg string, fields ...Field) {
+func (ctx *context) Debug(msg string, fields ...log.Field) {
 	if ctx.Level <= DEBUG {
 		now := time.Now()
 		for _, h := range ctx.handlers {
@@ -153,7 +301,7 @@ func (ctx *context) Debug(msg string, fields ...Field) {
 		}
 	}
 }
-func (ctx *context) Info(msg string, fields ...Field) {
+func (ctx *context) Info(msg string, fields ...log.Field) {
 	if ctx.Level <= INFO {
 		now := time.Now()
 		for _, h := range ctx.handlers {
@@ -164,7 +312,7 @@ func (ctx *context) Info(msg string, fields ...Field) {
 		}
 	}
 }
-func (ctx *context) Warn(msg string, fields ...Field) {
+func (ctx *context) Warn(msg string, fields ...log.Field) {
 	if ctx.Level <= WARNING {
 		now := time.Now()
 		for _, h := range ctx.handlers {
@@ -175,7 +323,7 @@ func (ctx *context) Warn(msg string, fields ...Field) {
 		}
 	}
 }
-func (ctx *context) Error(msg string, fields ...Field) {
+func (ctx *context) Error(msg string, fields ...log.Field) {
 	if ctx.Level <= ERROR {
 		now := time.Now()
 		for _, h := range ctx.handlers {
@@ -186,7 +334,7 @@ func (ctx *context) Error(msg string, fields ...Field) {
 		}
 	}
 }
-func (ctx *context) Panic(msg string, fields ...Field) {
+func (ctx *context) Panic(msg string, fields ...log.Field) {
 	if ctx.Level <= PANIC {
 		now := time.Now()
 		for _, h := range ctx.handlers {
@@ -199,7 +347,7 @@ func (ctx *context) Panic(msg string, fields ...Field) {
 	ctx.Dispose()
 	panic(msg)
 }
-func (ctx *context) Fatal(msg string, fields ...Field) {
+func (ctx *context) Fatal(msg string, fields ...log.Field) {
 	if ctx.Level <= FATAL {
 		now := time.Now()
 		for _, h := range ctx.handlers {
@@ -221,21 +369,32 @@ func (ctx *context) Write(p []byte) (n int, err error) {
 	return
 }
 func (ctx *context) Clone() Logger {
-	defer ctx.mu.Unlock()
-	ctx.mu.Lock()
+
 	c := pool.Get().(*context)
-	c.metadata = map[string]string{}
+	c.metadata = map[string]interface{}{}
+
+	ctx.handlerMu.Lock()
+	defer ctx.handlerMu.Unlock()
+
 	c.Level = ctx.Level
+	if ctx.span != nil {
+		c.span = ctx.span.Tracer().StartSpan(ctx.OperationName(), opentracing.SpanReference{
+			ReferencedContext: ctx.span.Context(),
+			Type:              opentracing.ChildOfRef,
+		})
+	}
+
 	for _, h := range ctx.handlers {
-		c.handlers = append(c.handlers, h.Clone())
+		h.Clone().Apply(c)
 	}
 	for k, v := range ctx.metadata {
-		c.metadata[k] = v
+		c.SetTag(k, v)
 	}
 	return c
 }
 func (ctx *context) Dispose() {
 	ctx.wg.Wait()
+	ctx.span.Finish()
 	ctx.handlers = ctx.handlers[:0]
 	pool.Put(ctx)
 }

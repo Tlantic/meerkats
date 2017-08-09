@@ -6,10 +6,11 @@ import (
 
 	"github.com/Tlantic/meerkats"
 	"github.com/Tlantic/meerkats/handlers/writer"
+	"github.com/opentracing/opentracing-go/log"
 )
 
-func meerkat_fakeFields() []meerkats.Field {
-	return []meerkats.Field{
+func meerkat_fakeFields() []log.Field {
+	return []log.Field{
 		meerkats.Int("int", 1),
 		meerkats.Int64("int64", 2),
 		meerkats.Float64("float", 3.0),

@@ -1,27 +1,54 @@
 package meerkats
 
 import (
+	. "context"
 	"fmt"
+	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/log"
 )
+
+func ContextWithLogger(ctx Context, logger Logger) Context {
+	return WithValue(ctx, uniqueKey, logger)
+}
+func LoggerFromContext(ctx Context) (logger Logger) {
+	var ok bool
+	if logger, ok = ctx.Value(uniqueKey).(Logger); !ok {
+		logger = Clone()
+		if span := opentracing.SpanFromContext(ctx); span != nil {
+			logger.WithSpan(span)
+		}
+	}
+	return
+}
 
 type Logger interface {
 	Encoder
+
+	OperationName() string
+	SetOperationName(string)
+
+	Span() opentracing.Span
+	WithSpan(opentracing.Span)
 
 	SetLevel(Level)
 
 	Register(...Handler)
 
+	// Deprecated: Use SetTag
 	SetMeta(string, string)
+	SetTag(string, interface{})
+	// Deprecated: Use GetTag
 	GetMeta(string) string
+	GetTag(string) interface{}
 
-	Log(level Level, msg string, fields ...Field)
-	Trace(msg string, fields ...Field)
-	Debug(msg string, fields ...Field)
-	Info(msg string, fields ...Field)
-	Warn(msg string, fields ...Field)
-	Error(msg string, fields ...Field)
-	Panic(msg string, fields ...Field)
-	Fatal(msg string, fields ...Field)
+	Log(level Level, msg string, fields ...log.Field)
+	Trace(msg string, fields ...log.Field)
+	Debug(msg string, fields ...log.Field)
+	Info(msg string, fields ...log.Field)
+	Warn(msg string, fields ...log.Field)
+	Error(msg string, fields ...log.Field)
+	Panic(msg string, fields ...log.Field)
+	Fatal(msg string, fields ...log.Field)
 
 	Write(p []byte) (n int, err error)
 	Clone() Logger
@@ -81,4 +108,16 @@ func (l *StandardLogger) Panicf(format string, v ...interface{}) {
 // Panicln is equivalent to l.Println() followed by a call to panic().
 func (l *StandardLogger) Panicln(v ...interface{}) {
 	l.Logger.Panic(fmt.Sprintln(v...))
+}
+
+type JaegerLogger struct {
+	Logger
+}
+
+// Infof logs a message at info priority
+func (l *JaegerLogger) Error(msg string) {
+	l.Logger.Error(msg)
+}
+func (l *JaegerLogger) Infof(msg string, args ...interface{}) {
+	l.Logger.Info(fmt.Sprintf(msg, args...))
 }
