@@ -11,14 +11,13 @@ import (
 
 	"github.com/Tlantic/meerkats"
 	"github.com/opentracing/opentracing-go/log"
-	"regexp"
 	"strconv"
 )
 
 var (
 	partial_ts  = []byte("timestamp=\"")
 	partial_lvl = []byte("\" level=\"")
-	partial_msg = []byte("\" message=\"")
+	partial_msg = []byte("\" message=")
 )
 
 var pool = sync.Pool{New: func() interface{} {
@@ -227,15 +226,15 @@ func (h *handler) Log(t time.Time, level meerkats.Level, msg string, fields []lo
 	if h.tl != "" {
 		bs = t.AppendFormat(append(bs, partial_ts...), h.tl)
 	}
-	bs = append(append(append(append(append(bs, partial_lvl...), []byte(level.String())...), partial_msg...), []byte(msg)...), '"')
+	bs = append(append(append(append(bs, partial_lvl...), []byte(level.String())...), partial_msg...), []byte(strconv.Quote(msg))...)
 
 	var fs []byte
 	for _, v := range h.fields {
-		fs = append(append(fs, ' '), append(append([]byte(v.Key()), '='), []byte(strconv.Quote(regexp.QuoteMeta(fmt.Sprintf("%s", v.Value()))))...)...)
+		fs = append(append(fs, ' '), append(append([]byte(v.Key()), '='), []byte(strconv.Quote(fmt.Sprintf("%s", v.Value())))...)...)
 	}
 
 	for _, v := range fields {
-		fs = append(append(fs, ' '), append(append([]byte(v.Key()), '='), []byte(strconv.Quote(regexp.QuoteMeta(fmt.Sprintf("%s", v.Value()))))...)...)
+		fs = append(append(fs, ' '), append(append([]byte(v.Key()), '='), []byte(strconv.Quote(fmt.Sprintf("%s", v.Value())))...)...)
 	}
 	h.w.Write(append(append(bs, fs...), '\n'))
 	done()
