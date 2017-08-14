@@ -229,10 +229,11 @@ func (h *handler) Log(t time.Time, level meerkats.Level, msg string, fields []lo
 	bs = append(append(append(append(bs, partial_lvl...), []byte(level.String())...), partial_msg...), []byte(strconv.Quote(msg))...)
 
 	var fs []byte
+	h.mu.Lock()
 	for _, v := range h.fields {
 		fs = append(append(fs, ' '), append(append([]byte(v.Key()), '='), []byte(strconv.Quote(fmt.Sprintf("%s", v.Value())))...)...)
 	}
-
+	h.mu.Unlock()
 	for _, v := range fields {
 		fs = append(append(fs, ' '), append(append([]byte(v.Key()), '='), []byte(strconv.Quote(fmt.Sprintf("%s", v.Value())))...)...)
 	}
