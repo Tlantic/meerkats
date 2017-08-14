@@ -181,9 +181,11 @@ func (h *spanHandler) Log(t time.Time, level Level, msg string, fields []log.Fie
 	defer done()
 	if level == 0 || h.Level >= level {
 		var fs []log.Field
+		h.mu.Lock()
 		for _, f := range h.fields {
 			fs = append(fs, f)
 		}
+		h.mu.Unlock()
 		h.logger.Span().LogFields(append(append(([]log.Field)(nil), String("level", level.String()), String("message", msg)), append(fs, fields...)...)...)
 	}
 }
