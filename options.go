@@ -33,18 +33,10 @@ func WithFields(fs ...log.Field) LoggerOption {
 	})
 }
 
-func WithMeta(meta map[string]string) LoggerOption {
+func WithTag(meta map[string]string) LoggerOption {
 	return LoggerReceiver(func(l Logger) {
 		for k, v := range meta {
-			l.SetMeta(k, v)
-		}
-	})
-}
-
-func WriterLevel(level Level) LoggerOption {
-	return LoggerReceiver(func(l Logger) {
-		if ctx, ok := l.(*context); ok {
-			ctx.writerLevel = level
+			l.SetTag(k, v)
 		}
 	})
 }
