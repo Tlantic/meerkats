@@ -76,22 +76,24 @@ func (ctx *context) Span() (span opentracing.Span) {
 	return ctx.span
 }
 func (ctx *context) WithSpan(span opentracing.Span) {
+	ctx.spanMu.Lock()
+	defer ctx.spanMu.Unlock()
 	if span != nil {
-		span = span.Tracer().StartSpan(ctx.OperationName(),
-			opentracing.SpanReference{
-				Type:              opentracing.FollowsFromRef,
-				ReferencedContext: ctx.Span().Context(),
-			}, opentracing.SpanReference{
-				Type:              opentracing.ChildOfRef,
-				ReferencedContext: span.Context(),
-			})
+		if ctx.span != nil {
+			span = span.Tracer().StartSpan(ctx.OperationName(),
+				opentracing.SpanReference{
+					Type:              opentracing.FollowsFromRef,
+					ReferencedContext: ctx.span.Context(),
+				}, opentracing.SpanReference{
+					Type:              opentracing.ChildOfRef,
+					ReferencedContext: span.Context(),
+				})
+		}
 
-		ctx.spanMu.Lock()
 		for k, v := range ctx.metadata {
 			span.SetTag(k, v)
 		}
 		ctx.span = span
-		ctx.spanMu.Unlock()
 	}
 }
 func (ctx *context) SetLevel(lvl Level) {

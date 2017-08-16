@@ -219,9 +219,6 @@ func (h *handler) With(fs ...meerkats.Field) {
 }
 
 func (h *handler) Log(t time.Time, level meerkats.Level, msg string, fields []log.Field, _ map[string]interface{}, done meerkats.DoneCallback) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-
 	var bs []byte
 	if h.tl != "" {
 		bs = t.AppendFormat(append(bs, partial_ts...), h.tl)
@@ -231,11 +228,11 @@ func (h *handler) Log(t time.Time, level meerkats.Level, msg string, fields []lo
 	var fs []byte
 	h.mu.Lock()
 	for _, v := range h.fields {
-		fs = append(append(fs, ' '), append(append([]byte(v.Key()), '='), []byte(strconv.Quote(fmt.Sprintf("%s", v.Value())))...)...)
+		fs = append(append(fs, ' '), append(append([]byte(v.Key()), '='), []byte(strconv.Quote(fmt.Sprintf("%v", v.Value())))...)...)
 	}
 	h.mu.Unlock()
 	for _, v := range fields {
-		fs = append(append(fs, ' '), append(append([]byte(v.Key()), '='), []byte(strconv.Quote(fmt.Sprintf("%s", v.Value())))...)...)
+		fs = append(append(fs, ' '), append(append([]byte(v.Key()), '='), []byte(strconv.Quote(fmt.Sprintf("%v", v.Value())))...)...)
 	}
 	h.w.Write(append(append(bs, fs...), '\n'))
 	done()
