@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/Tlantic/meerkats"
-	"github.com/Tlantic/meerkats/handlers/writer"
 	"github.com/opentracing/opentracing-go/log"
 )
 
@@ -32,7 +31,8 @@ func BenchmarkMeerkatsNew(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			meerkats.New(meerkats.PANIC, writer.Register())
+			// meerkats already dispatches a span handler by default
+			meerkats.New(meerkats.PANIC)
 		}
 	})
 }
@@ -43,14 +43,13 @@ func BenchmarkMeerkatsNewWithPredefinedFields(b *testing.B) {
 		for pb.Next() {
 			meerkats.New(
 				meerkats.PANIC,
-				writer.New(),
 				meerkats.WithFields(meerkat_fakeFields()...))
 		}
 	})
 }
 
 func BenchmarkMeerkatsDisabledLog(b *testing.B) {
-	logger := meerkats.New(meerkats.PANIC, writer.Register())
+	logger := meerkats.New(meerkats.PANIC)
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -60,7 +59,7 @@ func BenchmarkMeerkatsDisabledLog(b *testing.B) {
 }
 
 func BenchmarkMeerkatsDisabledLogWithPredefinedFields(b *testing.B) {
-	logger := meerkats.New(meerkats.PANIC, writer.New(), meerkats.WithFields(meerkat_fakeFields()...))
+	logger := meerkats.New(meerkats.PANIC, meerkats.WithFields(meerkat_fakeFields()...))
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -70,7 +69,7 @@ func BenchmarkMeerkatsDisabledLogWithPredefinedFields(b *testing.B) {
 }
 
 func BenchmarkMeerkatsDisabledLogWithFields(b *testing.B) {
-	logger := meerkats.New(meerkats.PANIC, writer.New())
+	logger := meerkats.New(meerkats.PANIC)
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -80,7 +79,7 @@ func BenchmarkMeerkatsDisabledLogWithFields(b *testing.B) {
 }
 
 func BenchmarkMeerkatsLog(b *testing.B) {
-	logger := meerkats.New(writer.New(writer.DiscardOutput))
+	logger := meerkats.New()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -90,7 +89,7 @@ func BenchmarkMeerkatsLog(b *testing.B) {
 }
 
 func BenchmarkMeerkatsLogWithPredefinedFields(b *testing.B) {
-	logger := meerkats.New(writer.New(writer.DiscardOutput), meerkats.WithFields(meerkat_fakeFields()...))
+	logger := meerkats.New(meerkats.WithFields(meerkat_fakeFields()...))
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -100,7 +99,7 @@ func BenchmarkMeerkatsLogWithPredefinedFields(b *testing.B) {
 }
 
 func BenchmarkMeerkatsLogWithFields(b *testing.B) {
-	logger := meerkats.New(writer.New(writer.DiscardOutput))
+	logger := meerkats.New()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {

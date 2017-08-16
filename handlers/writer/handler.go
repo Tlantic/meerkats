@@ -23,7 +23,7 @@ var (
 var pool = sync.Pool{New: func() interface{} {
 	return &handler{
 		Level:  meerkats.LEVEL_ALL,
-		fields: nil,
+		fields: map[string]log.Field{},
 		tl:     time.RFC3339Nano,
 		w:      os.Stdout,
 	}
@@ -32,11 +32,11 @@ var pool = sync.Pool{New: func() interface{} {
 var _ meerkats.Handler = (*handler)(nil)
 
 type handler struct {
-	Level  meerkats.Level
-	fields map[string]log.Field
-	tl     string
 	mu     sync.Mutex
 	w      io.Writer
+	tl     string
+	Level  meerkats.Level
+	fields map[string]log.Field
 }
 
 func New(options ...meerkats.HandlerOption) (h *handler) {
@@ -66,6 +66,7 @@ func (h *handler) GetLevel() meerkats.Level {
 func (h *handler) Dispose() {
 	h.Level = meerkats.LEVEL_ALL
 	h.tl = time.RFC3339Nano
+	h.fields = map[string]log.Field{}
 	h.w = os.Stdout
 	pool.Put(h)
 }

@@ -48,7 +48,12 @@ type handlerCollection struct {
 }
 
 func (c *handlerCollection) clear() {
+	c.Lock()
+	for _, v := range c.col {
+		v.Dispose()
+	}
 	c.col = nil
+	c.Unlock()
 }
 func (c *handlerCollection) forEach(fn func(idx int, value Handler)) {
 	c.RLock()
@@ -57,7 +62,7 @@ func (c *handlerCollection) forEach(fn func(idx int, value Handler)) {
 		fn(i, v)
 	}
 }
-func (c *handlerCollection) append(values ...Handler) {
+func (c *handlerCollection) add(values ...Handler) {
 	c.Lock()
 	defer c.Unlock()
 	c.col = append(c.col, values...)
@@ -83,6 +88,7 @@ func (s *span) setTag(key string, value interface{}) {
 var pool = sync.Pool{
 	New: func() interface{} {
 		return &context{
+			Level:    TRACE,
 			metadata: metadata{kv: map[string]interface{}{}},
 			handlers: handlerCollection{col: nil},
 		}
@@ -102,8 +108,7 @@ type context struct {
 
 func New(options ...LoggerOption) Logger {
 	ctx := pool.Get().(*context)
-	ctx.Level = TRACE
-	for _, opt := range append(append(([]LoggerOption)(nil), newSpanHandler()), options...) {
+	for _, opt := range append(options, newSpanHandler()) {
 		opt.Apply(ctx)
 	}
 	return ctx
@@ -155,7 +160,7 @@ func (ctx *context) SetLevel(lvl Level) {
 }
 
 func (ctx *context) Register(hs ...Handler) {
-	ctx.handlers.append(hs...)
+	ctx.handlers.add(hs...)
 }
 
 // Deprecate: Use Tag
@@ -364,6 +369,8 @@ func (ctx *context) Clone() Logger {
 	return c
 }
 func (ctx *context) Dispose() {
+	ctx.Level = TRACE
+
 	ctx.wg.Wait()
 	ctx.span.clear()
 	ctx.handlers.clear()

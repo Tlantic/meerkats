@@ -19,6 +19,7 @@ func zap_fakeFields() []zap.Field {
 	}
 }
 
+//noinspection GoUnusedFunction
 func zap_fakeMessages(n int) []string {
 	messages := make([]string, n)
 	for i := range messages {
@@ -31,7 +32,7 @@ func BenchmarkZapNew(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			zap.New(zap.NewTextEncoder(), zap.ErrorLevel)
+			zap.New(zap.NewTextEncoder(), zap.PanicLevel)
 		}
 	})
 }

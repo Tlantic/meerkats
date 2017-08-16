@@ -8,6 +8,15 @@ import (
 	"time"
 )
 
+var spool = sync.Pool{
+	New: func() interface{} {
+		return &spanHandler{
+			Level:  LEVEL_ALL,
+			fields: map[string]log.Field{},
+		}
+	},
+}
+
 type spanHandler struct {
 	mu     sync.Mutex
 	Level  Level
@@ -16,9 +25,7 @@ type spanHandler struct {
 }
 
 func newSpanHandler(options ...HandlerOption) Handler {
-	s := &spanHandler{
-		Level: TRACE,
-	}
+	s := spool.Get().(*spanHandler)
 	for _, v := range options {
 		v.Apply(s)
 	}
@@ -37,15 +44,15 @@ func (h *spanHandler) GetLevel() Level {
 	return h.Level
 }
 func (h *spanHandler) Dispose() {
-	pool.Put(h)
+	h.logger = nil
+	h.fields = map[string]log.Field{}
+	h.Level = LEVEL_ALL
+	spool.Put(h)
 }
 func (h *spanHandler) Clone() Handler {
-	h2 := &spanHandler{
-		sync.Mutex{},
-		h.Level,
-		h.logger,
-		map[string]log.Field{},
-	}
+	h2 := spool.Get().(*spanHandler)
+	h2.Level = h.Level
+	h2.logger = h.logger
 	for k, v := range h.fields {
 		h2.fields[k] = v
 	}
