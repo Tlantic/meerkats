@@ -143,7 +143,7 @@ func (ctx *context) WithSpan(span opentracing.Span) {
 		ctx.span.Lock()
 		defer ctx.span.Unlock()
 		if s := ctx.span.Span; s != nil {
-			ctx.span.Span = s.Tracer().StartSpan(ctx.OperationName(),
+			ctx.span.Span = span.Tracer().StartSpan(ctx.OperationName(),
 				opentracing.SpanReference{
 					Type:              opentracing.FollowsFromRef,
 					ReferencedContext: s.Context(),
