@@ -142,16 +142,18 @@ func (ctx *context) WithSpan(span opentracing.Span) {
 	if span != nil {
 		ctx.span.Lock()
 		defer ctx.span.Unlock()
-		if s := ctx.span.Span; s != nil {
-			ctx.span.Span = span.Tracer().StartSpan(ctx.OperationName(),
+
+		if ctx.span.Span != nil {
+			span = span.Tracer().StartSpan(ctx.OperationName(),
 				opentracing.SpanReference{
 					Type:              opentracing.FollowsFromRef,
-					ReferencedContext: s.Context(),
+					ReferencedContext: ctx.span.Span.Context(),
 				}, opentracing.SpanReference{
 					Type:              opentracing.ChildOfRef,
 					ReferencedContext: span.Context(),
 				})
 		}
+		ctx.span.Span = span
 		ctx.metadata.forEach(ctx.span.setTag)
 	}
 }
