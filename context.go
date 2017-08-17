@@ -139,23 +139,12 @@ func (ctx *context) Span() (span opentracing.Span) {
 	return ctx.span.Span
 }
 func (ctx *context) WithSpan(span opentracing.Span) {
+	ctx.span.Lock()
+	defer ctx.span.Unlock()
 	if span != nil {
-		ctx.span.Lock()
-		defer ctx.span.Unlock()
-
-		if ctx.span.Span != nil {
-			span = span.Tracer().StartSpan(ctx.OperationName(),
-				opentracing.SpanReference{
-					Type:              opentracing.FollowsFromRef,
-					ReferencedContext: ctx.span.Span.Context(),
-				}, opentracing.SpanReference{
-					Type:              opentracing.ChildOfRef,
-					ReferencedContext: span.Context(),
-				})
-		}
 		ctx.span.Span = span
-		ctx.metadata.forEach(ctx.span.setTag)
 	}
+	ctx.metadata.forEach(ctx.span.setTag)
 }
 func (ctx *context) SetLevel(lvl Level) {
 	ctx.Level = lvl
@@ -359,10 +348,7 @@ func (ctx *context) Clone() Logger {
 	ctx.span.Lock()
 	defer ctx.span.Unlock()
 	if s := ctx.span.Span; s != nil {
-		c.span.Span = s.Tracer().StartSpan(ctx.OperationName(), opentracing.SpanReference{
-			ReferencedContext: s.Context(),
-			Type:              opentracing.ChildOfRef,
-		})
+		c.span.Span = s.Tracer().StartSpan(ctx.OperationName(), opentracing.ChildOf(ctx.span.Context()))
 	}
 
 	ctx.handlers.forEach(func(_ int, h Handler) { h.Clone().Apply(c) })
