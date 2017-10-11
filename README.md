@@ -88,12 +88,12 @@ func main() {
 
   // initialize root
   kat.Register(writer.New())
-  kat.AddString("service-name", "svc-test")
+  kat.EmitString("service-name", "svc-test")
   
   err := http.ListenAndServe(":12345", func (w http.ResponseWriter, req *http.Request) {
     
     log := kat.Clone() // create new logger context
-    log.AddString("Origin", req.Header.Get("Origin"))
+    log.EmitString("Origin", req.Header.Get("Origin"))
     //...
     
     io.WriteString(w, "Ok")
@@ -102,9 +102,12 @@ func main() {
 }
 ```
 
+
 <br>
+
 Standard Go Log Package
 ---
+
 ### Interface
 Some packages may not want to directly depend on meerkats to use a logger or wan't a more generic interface to interact with.
 To satisfy such need Meerkats can be wrapped within a [StandardLogger](https://github.com/Tlantic/meerkats/blob/master/logger.go#L32) instance.
