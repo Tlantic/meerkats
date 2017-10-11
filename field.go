@@ -1,12 +1,15 @@
 package meerkats
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/opentracing/opentracing-go/log"
 	"strconv"
 )
 
 type FieldSet []Field
 
+// Deprecated: Use log.Field
 type Field struct {
 	Key            string
 	Type           FieldType
@@ -98,7 +101,6 @@ func (v *Field) Set(value interface{}) {
 	}
 
 }
-
 func (v Field) String() string {
 	switch v.Type {
 	case TypeString:
@@ -118,38 +120,48 @@ func (v Field) String() string {
 	}
 }
 
-func NewField(key string, value interface{}) (f Field) {
-	f = Field{Key: key}
-	f.Set(value)
-	return
+func NewField(key string, value interface{}) (f log.Field) {
+	return log.Object(key, value)
 }
-func String(key string, value string) Field {
-	return Field{Key: key, Type: TypeString, ValueString: value}
+func String(key string, value string) log.Field {
+	return log.String(key, value)
 }
-func Bool(key string, value bool) Field {
-	return Field{Key: key, Type: TypeBool, ValueBool: value}
+func Bool(key string, value bool) log.Field {
+	return log.Bool(key, value)
 }
-func Int(key string, value int) Field {
-	return Field{Key: key, Type: TypeInt64, ValueInt64: int64(value)}
+func Int(key string, value int) log.Field {
+	return log.Int(key, value)
 }
-func Int64(key string, value int64) Field {
-	return Field{Key: key, Type: TypeInt64, ValueInt64: value}
+func Int32(key string, value int32) log.Field {
+	return log.Int32(key, value)
 }
-func Uint(key string, value uint) Field {
-	return Field{Key: key, Type: TypeUint, ValueUint64: uint64(value)}
+func Int64(key string, value int64) log.Field {
+	return log.Int64(key, value)
 }
-func Uint64(key string, value uint64) Field {
-	return Field{Key: key, Type: TypeUint64, ValueUint64: value}
+
+func Uint(key string, value uint) log.Field {
+	return log.Uint64(key, uint64(value))
 }
-func Float32(key string, value float32) Field {
-	return Field{Key: key, Type: TypeFloat32, ValueFloat32: value}
+func Uint32(key string, value uint32) log.Field {
+	return log.Uint32(key, value)
 }
-func Float64(key string, value float64) Field {
-	return Field{Key: key, Type: TypeFloat64, ValueFloat64: value}
+func Uint64(key string, value uint64) log.Field {
+	return log.Uint64(key, value)
 }
-func JSON(key string, value interface{}) Field {
-	return Field{Key: key, Type: TypeJSON, ValueInterface: value}
+
+func Float32(key string, value float32) log.Field {
+	return log.Float32(key, value)
 }
-func ErrorString(err error) Field {
-	return Field{Key: "error", Type: TypeError, ValueInterface: err}
+func Float64(key string, value float64) log.Field {
+	return log.Float64(key, value)
+}
+func Object(key string, value interface{}) log.Field {
+	return log.Object(key, value)
+}
+func JSON(key string, value interface{}) log.Field {
+	s, _ := json.Marshal(value)
+	return log.String(key, string(s))
+}
+func ErrorString(err error) log.Field {
+	return log.Error(err)
 }

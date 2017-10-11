@@ -12,13 +12,13 @@ var (
 )
 
 func Output(w io.Writer) meerkats.HandlerOption {
-	return meerkats.HandlerReceiver(func(handler meerkats.Handler) {
-		handler.(*writerLogger).w = w
+	return meerkats.HandlerReceiver(func(h meerkats.Handler) {
+		h.(*handler).w = w
 	})
 }
 
 func TimeLayoutOption(layout string) meerkats.HandlerOption {
-	return meerkats.HandlerReceiver(func(handler meerkats.Handler) {
-		handler.(*writerLogger).tl = layout
+	return meerkats.HandlerReceiver(func(h meerkats.Handler) {
+		h.(*handler).tl = layout
 	})
 }

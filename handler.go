@@ -1,6 +1,9 @@
 package meerkats
 
-import "time"
+import (
+	"github.com/opentracing/opentracing-go/log"
+	"time"
+)
 
 type DoneCallback func()
 
@@ -15,7 +18,7 @@ type Handler interface {
 	SetLevel(level Level)
 	GetLevel() Level
 
-	Log(time.Time, Level, string, []Field, map[string]string, DoneCallback)
+	Log(time.Time, Level, string, []log.Field, map[string]interface{}, DoneCallback)
 
 	Clone() Handler
 	Dispose()

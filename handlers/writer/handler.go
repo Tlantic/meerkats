@@ -10,36 +10,37 @@ import (
 	"time"
 
 	"github.com/Tlantic/meerkats"
+	"github.com/opentracing/opentracing-go/log"
+	"strconv"
 )
 
 var (
-	partial_lvl = []byte("level=\"")
-	partial_ts  = []byte("\" timestamp=\"")
-	partial_msg = []byte("\" message=\"")
+	partial_ts  = []byte("timestamp=\"")
+	partial_lvl = []byte("\" level=\"")
+	partial_msg = []byte("\" message=")
 )
 
-var buffSize = 2048
 var pool = sync.Pool{New: func() interface{} {
-	return &writerLogger{
-		Level: meerkats.LEVEL_ALL,
-		tl:    time.RFC3339Nano,
-		w:     os.Stdout,
-		bytes: make([]byte, 0, buffSize),
+	return &handler{
+		Level:  meerkats.LEVEL_ALL,
+		fields: map[string]log.Field{},
+		tl:     time.RFC3339Nano,
+		w:      os.Stdout,
 	}
 }}
 
-var _ meerkats.Handler = (*writerLogger)(nil)
+var _ meerkats.Handler = (*handler)(nil)
 
-type writerLogger struct {
-	Level meerkats.Level
-	tl    string
-	mu    sync.Mutex
-	bytes []byte
-	w     io.Writer
+type handler struct {
+	mu     sync.Mutex
+	w      io.Writer
+	tl     string
+	Level  meerkats.Level
+	fields map[string]log.Field
 }
 
-func New(options ...meerkats.HandlerOption) (h *writerLogger) {
-	h = pool.Get().(*writerLogger)
+func New(options ...meerkats.HandlerOption) (h *handler) {
+	h = pool.Get().(*handler)
 	for _, opt := range options {
 		opt.Apply(h)
 	}
@@ -52,94 +53,148 @@ func Register(options ...meerkats.HandlerOption) meerkats.LoggerOption {
 	})
 }
 
-func (h *writerLogger) Apply(l meerkats.Logger) {
+func (h *handler) Apply(l meerkats.Logger) {
 	l.Register(h)
 }
 
-func (h *writerLogger) SetLevel(level meerkats.Level) {
+func (h *handler) SetLevel(level meerkats.Level) {
 	h.Level = level
 }
-func (h *writerLogger) GetLevel() meerkats.Level {
+func (h *handler) GetLevel() meerkats.Level {
 	return h.Level
 }
-func (h *writerLogger) Dispose() {
+func (h *handler) Dispose() {
 	h.Level = meerkats.LEVEL_ALL
 	h.tl = time.RFC3339Nano
+	h.fields = map[string]log.Field{}
 	h.w = os.Stdout
-	h.bytes = h.bytes[:0]
 	pool.Put(h)
 }
-func (h *writerLogger) Clone() meerkats.Handler {
+func (h *handler) Clone() meerkats.Handler {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	clone := pool.Get().(*writerLogger)
+	clone := pool.Get().(*handler)
 	clone.w = h.w
-	clone.bytes = h.bytes[0:]
+	clone.fields = map[string]log.Field{}
+	for k, v := range h.fields {
+		clone.fields[k] = v
+	}
 	clone.Level = h.Level
 	clone.tl = h.tl
 	return clone
 }
 
-func (h *writerLogger) AddBool(key string, value bool) {
+func (h *handler) EmitBool(key string, value bool) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
-	h.bytes = appendBool(h.bytes, key, value)
+	h.fields[key] = meerkats.Bool(key, value)
 }
-func (h *writerLogger) AddString(key string, value string) {
+func (h *handler) AddBool(key string, value bool) {
+	h.EmitBool(key, value)
+}
+func (h *handler) EmitString(key string, value string) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
-	h.bytes = appendString(h.bytes, key, value)
+	h.fields[key] = meerkats.String(key, value)
 }
-func (h *writerLogger) AddInt(key string, value int) {
+func (h *handler) AddString(key string, value string) {
+	h.EmitString(key, value)
+}
+func (h *handler) EmitInt(key string, value int) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
-	h.bytes = appendInt64(h.bytes, key, int64(value))
+	h.fields[key] = meerkats.Int(key, value)
 }
-func (h *writerLogger) AddInt64(key string, value int64) {
+func (h *handler) AddInt(key string, value int) {
+	h.EmitInt(key, value)
+}
+func (h *handler) EmitInt32(key string, value int32) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
-	h.bytes = appendInt64(h.bytes, key, value)
+	h.fields[key] = meerkats.Int32(key, value)
 }
-func (h *writerLogger) AddUint(key string, value uint) {
+func (h *handler) EmitInt64(key string, value int64) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
-	h.bytes = appendUint64(h.bytes, key, uint64(value))
+	h.fields[key] = meerkats.Int64(key, value)
 }
-func (h *writerLogger) AddUint64(key string, value uint64) {
+func (h *handler) AddInt64(key string, value int64) {
+	h.EmitInt64(key, value)
+}
+func (h *handler) EmitUint(key string, value uint) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
-	h.bytes = appendUint64(h.bytes, key, value)
+	h.fields[key] = meerkats.Uint(key, value)
 }
-func (h *writerLogger) AddFloat32(key string, value float32) {
+func (h *handler) AddUint(key string, value uint) {
+	h.EmitUint(key, value)
+}
+func (h *handler) EmitUint32(key string, value uint32) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
-	h.bytes = appendFloat32(h.bytes, key, value)
+	h.fields[key] = meerkats.Uint32(key, value)
 }
-func (h *writerLogger) AddFloat64(key string, value float64) {
+func (h *handler) EmitUint64(key string, value uint64) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
-	h.bytes = appendFloat64(h.bytes, key, value)
+	h.fields[key] = meerkats.Uint64(key, value)
 }
-func (h *writerLogger) AddJSON(key string, value interface{}) {
+func (h *handler) AddUint64(key string, value uint64) {
+	h.EmitUint64(key, value)
+}
+func (h *handler) EmitFloat32(key string, value float32) {
+	defer h.mu.Unlock()
+	h.mu.Lock()
+	h.fields[key] = meerkats.Float32(key, value)
+}
+func (h *handler) AddFloat32(key string, value float32) {
+	h.EmitFloat32(key, value)
+}
+func (h *handler) EmitFloat64(key string, value float64) {
+	defer h.mu.Unlock()
+	h.mu.Lock()
+	h.fields[key] = meerkats.Float64(key, value)
+}
+func (h *handler) AddFloat64(key string, value float64) {
+	h.EmitFloat64(key, value)
+}
+func (h *handler) EmitJSON(key string, value interface{}) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
 
 	b := bytes.NewBuffer([]byte{})
 	json.NewEncoder(b).Encode(value)
-	h.bytes = appendString(h.bytes, key, b.String())
+	h.fields[key] = meerkats.String(key, b.String())
 }
-func (h *writerLogger) AddError(err error) {
+func (h *handler) AddJSON(key string, value interface{}) {
+	h.EmitJSON(key, value)
+}
+func (h *handler) EmitError(err error) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
-	h.bytes = appendString(h.bytes, "error", err.Error())
+	h.fields["error"] = meerkats.ErrorString(err)
 }
-func (h *writerLogger) Add(key string, value interface{}) {
+func (h *handler) AddError(err error) {
+	h.EmitError(err)
+}
+func (h *handler) EmitObject(key string, value interface{}) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
-	h.bytes = appendString(h.bytes, key, fmt.Sprintf("%+v", value))
+	h.fields[key] = meerkats.Object(key, value)
+}
+func (h *handler) EmitLazyLogger(value log.LazyLogger) {
+	value(h)
+}
+func (h *handler) Add(key string, value interface{}) {
+	h.EmitObject(key, value)
 }
 
-func (h *writerLogger) With(fs ...meerkats.Field) {
+func (h *handler) EmitField(fs ...log.Field) {
+	for _, v := range fs {
+		v.Marshal(h)
+	}
+}
+func (h *handler) With(fs ...meerkats.Field) {
 	for _, v := range fs {
 		switch v.Type {
 		case meerkats.TypeString:
@@ -164,16 +219,22 @@ func (h *writerLogger) With(fs ...meerkats.Field) {
 	}
 }
 
-func (h *writerLogger) Log(t time.Time, level meerkats.Level, msg string, fields []meerkats.Field, _ map[string]string, done meerkats.DoneCallback) {
-	clone := pool.Get().(*writerLogger)
-	clone.bytes = append(append(append(clone.bytes, partial_lvl...), level.String()...))
+func (h *handler) Log(t time.Time, level meerkats.Level, msg string, fields []log.Field, _ map[string]interface{}, done meerkats.DoneCallback) {
+	var bs []byte
 	if h.tl != "" {
-		clone.bytes = append(clone.bytes, partial_ts...)
-		clone.bytes = t.AppendFormat(clone.bytes, h.tl)
+		bs = t.AppendFormat(append(bs, partial_ts...), h.tl)
 	}
-	clone.bytes = append(append(append(append(clone.bytes, partial_msg...), msg...), '"'), h.bytes[0:]...)
-	clone.With(fields...)
-	h.w.Write(append(clone.bytes, '\n'))
-	clone.Dispose()
+	bs = append(append(append(append(bs, partial_lvl...), []byte(level.String())...), partial_msg...), []byte(strconv.Quote(msg))...)
+
+	var fs []byte
+	h.mu.Lock()
+	for _, v := range h.fields {
+		fs = append(append(fs, ' '), append(append([]byte(v.Key()), '='), []byte(strconv.Quote(fmt.Sprintf("%v", v.Value())))...)...)
+	}
+	h.mu.Unlock()
+	for _, v := range fields {
+		fs = append(append(fs, ' '), append(append([]byte(v.Key()), '='), []byte(strconv.Quote(fmt.Sprintf("%v", v.Value())))...)...)
+	}
+	h.w.Write(append(append(bs, fs...), '\n'))
 	done()
 }
