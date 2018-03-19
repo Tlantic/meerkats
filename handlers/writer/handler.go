@@ -85,7 +85,16 @@ func (h *handler) Close() error {
 	return nil
 }
 func (h *handler) Child() meerkats.Handler {
-	return h.New()
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	clone := pool.Get().(*handler)
+	clone.w = h.w
+	clone.fields = make([]log.Field, 0, len(h.fields)+2)
+	copy(clone.fields, h.fields)
+
+	clone.Level = h.Level
+	clone.tl = h.tl
+	return clone
 }
 func (h *handler) EmitBool(key string, value bool) {
 	defer h.mu.Unlock()

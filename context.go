@@ -282,7 +282,7 @@ func (ctx *context) Write(p []byte) (n int, err error) {
 	ctx.Log(ctx.Level, _reNewline.ReplaceAllString(string(p), ""))
 	return
 }
-func (ctx *context) Child() Logger {
+func (ctx *context) Child(options ... LoggerOption) Logger {
 	c := pool.Get().(*context)
 	c.Level = ctx.Level
 
@@ -290,6 +290,10 @@ func (ctx *context) Child() Logger {
 	defer ctx.span.Unlock()
 	if s := ctx.span.Span; s != nil {
 		c.span.Span = s.Tracer().StartSpan(ctx.OperationName(), opentracing.ChildOf(ctx.span.Context()))
+	}
+
+	for _, opt := range options {
+		opt.Apply(c)
 	}
 
 	ctx.handlers.forEach(func(_ int, h Handler) { h.Child().Apply(c) })

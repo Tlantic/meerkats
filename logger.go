@@ -47,7 +47,7 @@ type Logger interface {
 	Fatal(msg string, fields ...log.Field)
 
 	Write(p []byte) (n int, err error)
-	Child() Logger
+	Child(options ... LoggerOption) Logger
 	Close() error
 }
 
