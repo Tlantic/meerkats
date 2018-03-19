@@ -34,11 +34,7 @@ type Logger interface {
 
 	Register(...Handler)
 
-	// Deprecated: Use SetTag
-	SetMeta(string, string)
 	SetTag(string, interface{})
-	// Deprecated: Use GetTag
-	GetMeta(string) string
 	GetTag(string) interface{}
 
 	Log(level Level, msg string, fields ...log.Field)
@@ -52,7 +48,7 @@ type Logger interface {
 
 	Write(p []byte) (n int, err error)
 	Child() Logger
-	Dispose()
+	Close() error
 }
 
 type StandardLogger struct {

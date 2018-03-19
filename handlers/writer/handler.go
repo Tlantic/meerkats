@@ -92,24 +92,15 @@ func (h *handler) EmitBool(key string, value bool) {
 	h.mu.Lock()
 	h.upsertField(key, meerkats.Bool(key, value))
 }
-func (h *handler) AddBool(key string, value bool) {
-	h.EmitBool(key, value)
-}
 func (h *handler) EmitString(key string, value string) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
 	h.upsertField(key, meerkats.String(key, value))
 }
-func (h *handler) AddString(key string, value string) {
-	h.EmitString(key, value)
-}
 func (h *handler) EmitInt(key string, value int) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
 	h.upsertField(key, meerkats.Int(key, value))
-}
-func (h *handler) AddInt(key string, value int) {
-	h.EmitInt(key, value)
 }
 func (h *handler) EmitInt32(key string, value int32) {
 	defer h.mu.Unlock()
@@ -121,16 +112,10 @@ func (h *handler) EmitInt64(key string, value int64) {
 	h.mu.Lock()
 	h.upsertField(key, meerkats.Int64(key, value))
 }
-func (h *handler) AddInt64(key string, value int64) {
-	h.EmitInt64(key, value)
-}
 func (h *handler) EmitUint(key string, value uint) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
 	h.upsertField(key, meerkats.Uint(key, value))
-}
-func (h *handler) AddUint(key string, value uint) {
-	h.EmitUint(key, value)
 }
 func (h *handler) EmitUint32(key string, value uint32) {
 	defer h.mu.Unlock()
@@ -142,24 +127,15 @@ func (h *handler) EmitUint64(key string, value uint64) {
 	h.mu.Lock()
 	h.upsertField(key, meerkats.Uint64(key, value))
 }
-func (h *handler) AddUint64(key string, value uint64) {
-	h.EmitUint64(key, value)
-}
 func (h *handler) EmitFloat32(key string, value float32) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
 	h.upsertField(key, meerkats.Float32(key, value))
 }
-func (h *handler) AddFloat32(key string, value float32) {
-	h.EmitFloat32(key, value)
-}
 func (h *handler) EmitFloat64(key string, value float64) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
 	h.upsertField(key, meerkats.Float64(key, value))
-}
-func (h *handler) AddFloat64(key string, value float64) {
-	h.EmitFloat64(key, value)
 }
 func (h *handler) EmitJSON(key string, value interface{}) {
 	defer h.mu.Unlock()
@@ -169,16 +145,10 @@ func (h *handler) EmitJSON(key string, value interface{}) {
 	json.NewEncoder(b).Encode(value)
 	h.upsertField(key, meerkats.String(key, b.String()))
 }
-func (h *handler) AddJSON(key string, value interface{}) {
-	h.EmitJSON(key, value)
-}
 func (h *handler) EmitError(err error) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
 	h.upsertField("error", meerkats.ErrorString(err))
-}
-func (h *handler) AddError(err error) {
-	h.EmitError(err)
 }
 func (h *handler) EmitObject(key string, value interface{}) {
 	defer h.mu.Unlock()
@@ -188,40 +158,11 @@ func (h *handler) EmitObject(key string, value interface{}) {
 func (h *handler) EmitLazyLogger(value log.LazyLogger) {
 	value(h)
 }
-func (h *handler) Add(key string, value interface{}) {
-	h.EmitObject(key, value)
-}
-
 func (h *handler) EmitField(fs ...log.Field) {
 	for _, v := range fs {
 		v.Marshal(h)
 	}
 }
-func (h *handler) With(fs ...meerkats.Field) {
-	for _, v := range fs {
-		switch v.Type {
-		case meerkats.TypeString:
-			h.AddString(v.Key, v.ValueString)
-		case meerkats.TypeBool:
-			h.AddBool(v.Key, v.ValueBool)
-		case meerkats.TypeInt64:
-			h.AddInt64(v.Key, v.ValueInt64)
-		case meerkats.TypeUint64:
-			h.AddUint64(v.Key, v.ValueUint64)
-		case meerkats.TypeFloat32:
-			h.AddFloat32(v.Key, v.ValueFloat32)
-		case meerkats.TypeFloat64:
-			h.AddFloat64(v.Key, v.ValueFloat64)
-		case meerkats.TypeError:
-			h.AddError(v.ValueInterface.(error))
-		case meerkats.TypeJSON:
-			h.AddJSON(v.Key, v.ValueInterface)
-		default:
-			h.Add(v.Key, v.ValueInterface)
-		}
-	}
-}
-
 func (h *handler) Log(t time.Time, level meerkats.Level, msg string, fields []log.Field, _ map[string]interface{}, done meerkats.DoneCallback) {
 	var bs []byte
 	if h.tl != "" {
