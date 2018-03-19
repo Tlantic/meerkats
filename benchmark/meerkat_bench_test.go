@@ -32,7 +32,7 @@ func BenchmarkMeerkatsNew(b *testing.B) {
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			// meerkats already dispatches a span handler by default
-			meerkats.New(meerkats.PANIC)
+			meerkats.New(meerkats.LevelPanic)
 		}
 	})
 }
@@ -42,14 +42,14 @@ func BenchmarkMeerkatsNewWithPredefinedFields(b *testing.B) {
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			meerkats.New(
-				meerkats.PANIC,
+				meerkats.LevelPanic,
 				meerkats.WithFields(meerkat_fakeFields()...))
 		}
 	})
 }
 
 func BenchmarkMeerkatsDisabledLog(b *testing.B) {
-	logger := meerkats.New(meerkats.PANIC)
+	logger := meerkats.New(meerkats.LevelPanic)
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -59,7 +59,7 @@ func BenchmarkMeerkatsDisabledLog(b *testing.B) {
 }
 
 func BenchmarkMeerkatsDisabledLogWithPredefinedFields(b *testing.B) {
-	logger := meerkats.New(meerkats.PANIC, meerkats.WithFields(meerkat_fakeFields()...))
+	logger := meerkats.New(meerkats.LevelPanic, meerkats.WithFields(meerkat_fakeFields()...))
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -69,7 +69,7 @@ func BenchmarkMeerkatsDisabledLogWithPredefinedFields(b *testing.B) {
 }
 
 func BenchmarkMeerkatsDisabledLogWithFields(b *testing.B) {
-	logger := meerkats.New(meerkats.PANIC)
+	logger := meerkats.New(meerkats.LevelPanic)
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {

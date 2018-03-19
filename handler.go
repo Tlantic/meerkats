@@ -20,6 +20,6 @@ type Handler interface {
 
 	Log(time.Time, Level, string, []log.Field, map[string]interface{}, DoneCallback)
 
-	Clone() Handler
-	Dispose()
+	Child() Handler
+	Close() error
 }

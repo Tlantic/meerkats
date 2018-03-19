@@ -8,31 +8,31 @@ import (
 
 func TestLevel_String(t *testing.T) {
 
-	if TRACE.String() != Levels[TRACE] {
+	if LevelTrace.String() != Levels[LevelTrace] {
 		t.Fail()
 	}
 
-	if DEBUG.String() != Levels[DEBUG] {
+	if LevelDebug.String() != Levels[LevelDebug] {
 		t.Fail()
 	}
 
-	if INFO.String() != Levels[INFO] {
+	if LevelInfo.String() != Levels[LevelInfo] {
 		t.Fail()
 	}
 
-	if WARNING.String() != Levels[WARNING] {
+	if LevelWarning.String() != Levels[LevelWarning] {
 		t.Fail()
 	}
 
-	if ERROR.String() != Levels[ERROR] {
+	if LevelError.String() != Levels[LevelError] {
 		t.Fail()
 	}
 
-	if FATAL.String() != Levels[FATAL] {
+	if LevelFatal.String() != Levels[LevelFatal] {
 		t.Fail()
 	}
 
-	if PANIC.String() != Levels[PANIC] {
+	if LevelPanic.String() != Levels[LevelPanic] {
 		t.Fail()
 	}
 }

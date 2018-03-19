@@ -3,25 +3,25 @@ package meerkats
 type Level uint8
 
 const (
-	TRACE Level = 1 << iota
-	DEBUG
-	INFO
-	WARNING
-	ERROR
-	FATAL
-	PANIC
+	LevelTrace   Level = 1 << iota // 00000001 -> 1
+	LevelDebug                     // 00000010 -> 2
+	LevelInfo                      // 00000100 -> 4
+	LevelWarning                   // 00001000 -> 8
+	LevelError                     // 00010000 -> 16
+	LevelFatal                     // 00100000 -> 32
+	LevelPanic                     // 01000000 -> 64
 )
 
-const LEVEL_ALL = TRACE | DEBUG | INFO | WARNING | ERROR | FATAL | PANIC
+const LevelAll = LevelTrace | LevelDebug | LevelInfo | LevelWarning | LevelError | LevelFatal | LevelPanic // -> 01111111 -> 127
 
 var Levels = [...]string{
-	TRACE:   "TRACE",
-	DEBUG:   "DEBUG",
-	INFO:    "INFO",
-	WARNING: "WARNING",
-	ERROR:   "ERROR",
-	FATAL:   "FATAL",
-	PANIC:   "PANIC",
+	LevelTrace:   "trace",
+	LevelDebug:   "debug",
+	LevelInfo:    "info",
+	LevelWarning: "warning",
+	LevelError:   "error",
+	LevelFatal:   "fatal",
+	LevelPanic:   "panic",
 }
 
 func (lvl Level) String() string {
