@@ -13,7 +13,7 @@ func ContextWithLogger(ctx Context, logger Logger) Context {
 func LoggerFromContext(ctx Context) (logger Logger) {
 	var ok bool
 	if logger, ok = ctx.Value(uniqueKey).(Logger); !ok {
-		logger = Clone()
+		logger = Child()
 		if span := opentracing.SpanFromContext(ctx); span != nil {
 			logger.WithSpan(span)
 		}
@@ -51,7 +51,7 @@ type Logger interface {
 	Fatal(msg string, fields ...log.Field)
 
 	Write(p []byte) (n int, err error)
-	Clone() Logger
+	Child() Logger
 	Dispose()
 }
 

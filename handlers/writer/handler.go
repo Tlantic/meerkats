@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 
 	"github.com/Tlantic/meerkats"
 	"github.com/opentracing/opentracing-go/log"
-	"strconv"
 )
 
 var (
@@ -22,8 +22,9 @@ var (
 
 var pool = sync.Pool{New: func() interface{} {
 	return &handler{
-		Level:  meerkats.LEVEL_ALL,
-		fields: map[string]log.Field{},
+		Level:  meerkats.LevelAll,
+		fields: make([]log.Field, 0, 8),
+		fmap:   make(map[string]*log.Field),
 		tl:     time.RFC3339Nano,
 		w:      os.Stdout,
 	}
@@ -36,7 +37,18 @@ type handler struct {
 	w      io.Writer
 	tl     string
 	Level  meerkats.Level
-	fields map[string]log.Field
+	fmap   map[string]*log.Field
+	fields []log.Field
+}
+
+func (h *handler) upsertField(key string, field log.Field) {
+	if f := h.fmap[key]; f != nil {
+		*f = field
+		return
+	}
+	h.fields = append(h.fields, field)
+	h.fmap[key] = &h.fields[len(h.fields)-1]
+	return
 }
 
 func New(options ...meerkats.HandlerOption) (h *handler) {
@@ -48,7 +60,7 @@ func New(options ...meerkats.HandlerOption) (h *handler) {
 }
 
 func Register(options ...meerkats.HandlerOption) meerkats.LoggerOption {
-	return meerkats.LoggerReceiver(func(l meerkats.Logger) {
+	return meerkats.LoggerOptionFunc(func(l meerkats.Logger) {
 		l.Register(New(options...))
 	})
 }
@@ -63,31 +75,22 @@ func (h *handler) SetLevel(level meerkats.Level) {
 func (h *handler) GetLevel() meerkats.Level {
 	return h.Level
 }
-func (h *handler) Dispose() {
-	h.Level = meerkats.LEVEL_ALL
+func (h *handler) Close() error {
+	h.Level = meerkats.LevelAll
 	h.tl = time.RFC3339Nano
-	h.fields = map[string]log.Field{}
+	h.fields = make([]log.Field, 0, 8)
+	h.fmap = make(map[string]*log.Field)
 	h.w = os.Stdout
 	pool.Put(h)
+	return nil
 }
-func (h *handler) Clone() meerkats.Handler {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	clone := pool.Get().(*handler)
-	clone.w = h.w
-	clone.fields = map[string]log.Field{}
-	for k, v := range h.fields {
-		clone.fields[k] = v
-	}
-	clone.Level = h.Level
-	clone.tl = h.tl
-	return clone
+func (h *handler) Child() meerkats.Handler {
+	return h.New()
 }
-
 func (h *handler) EmitBool(key string, value bool) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
-	h.fields[key] = meerkats.Bool(key, value)
+	h.upsertField(key, meerkats.Bool(key, value))
 }
 func (h *handler) AddBool(key string, value bool) {
 	h.EmitBool(key, value)
@@ -95,7 +98,7 @@ func (h *handler) AddBool(key string, value bool) {
 func (h *handler) EmitString(key string, value string) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
-	h.fields[key] = meerkats.String(key, value)
+	h.upsertField(key, meerkats.String(key, value))
 }
 func (h *handler) AddString(key string, value string) {
 	h.EmitString(key, value)
@@ -103,7 +106,7 @@ func (h *handler) AddString(key string, value string) {
 func (h *handler) EmitInt(key string, value int) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
-	h.fields[key] = meerkats.Int(key, value)
+	h.upsertField(key, meerkats.Int(key, value))
 }
 func (h *handler) AddInt(key string, value int) {
 	h.EmitInt(key, value)
@@ -111,12 +114,12 @@ func (h *handler) AddInt(key string, value int) {
 func (h *handler) EmitInt32(key string, value int32) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
-	h.fields[key] = meerkats.Int32(key, value)
+	h.upsertField(key, meerkats.Int32(key, value))
 }
 func (h *handler) EmitInt64(key string, value int64) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
-	h.fields[key] = meerkats.Int64(key, value)
+	h.upsertField(key, meerkats.Int64(key, value))
 }
 func (h *handler) AddInt64(key string, value int64) {
 	h.EmitInt64(key, value)
@@ -124,7 +127,7 @@ func (h *handler) AddInt64(key string, value int64) {
 func (h *handler) EmitUint(key string, value uint) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
-	h.fields[key] = meerkats.Uint(key, value)
+	h.upsertField(key, meerkats.Uint(key, value))
 }
 func (h *handler) AddUint(key string, value uint) {
 	h.EmitUint(key, value)
@@ -132,12 +135,12 @@ func (h *handler) AddUint(key string, value uint) {
 func (h *handler) EmitUint32(key string, value uint32) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
-	h.fields[key] = meerkats.Uint32(key, value)
+	h.upsertField(key, meerkats.Uint32(key, value))
 }
 func (h *handler) EmitUint64(key string, value uint64) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
-	h.fields[key] = meerkats.Uint64(key, value)
+	h.upsertField(key, meerkats.Uint64(key, value))
 }
 func (h *handler) AddUint64(key string, value uint64) {
 	h.EmitUint64(key, value)
@@ -145,7 +148,7 @@ func (h *handler) AddUint64(key string, value uint64) {
 func (h *handler) EmitFloat32(key string, value float32) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
-	h.fields[key] = meerkats.Float32(key, value)
+	h.upsertField(key, meerkats.Float32(key, value))
 }
 func (h *handler) AddFloat32(key string, value float32) {
 	h.EmitFloat32(key, value)
@@ -153,7 +156,7 @@ func (h *handler) AddFloat32(key string, value float32) {
 func (h *handler) EmitFloat64(key string, value float64) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
-	h.fields[key] = meerkats.Float64(key, value)
+	h.upsertField(key, meerkats.Float64(key, value))
 }
 func (h *handler) AddFloat64(key string, value float64) {
 	h.EmitFloat64(key, value)
@@ -164,7 +167,7 @@ func (h *handler) EmitJSON(key string, value interface{}) {
 
 	b := bytes.NewBuffer([]byte{})
 	json.NewEncoder(b).Encode(value)
-	h.fields[key] = meerkats.String(key, b.String())
+	h.upsertField(key, meerkats.String(key, b.String()))
 }
 func (h *handler) AddJSON(key string, value interface{}) {
 	h.EmitJSON(key, value)
@@ -172,7 +175,7 @@ func (h *handler) AddJSON(key string, value interface{}) {
 func (h *handler) EmitError(err error) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
-	h.fields["error"] = meerkats.ErrorString(err)
+	h.upsertField("error", meerkats.ErrorString(err))
 }
 func (h *handler) AddError(err error) {
 	h.EmitError(err)
@@ -180,7 +183,7 @@ func (h *handler) AddError(err error) {
 func (h *handler) EmitObject(key string, value interface{}) {
 	defer h.mu.Unlock()
 	h.mu.Lock()
-	h.fields[key] = meerkats.Object(key, value)
+	h.upsertField(key, meerkats.Object(key, value))
 }
 func (h *handler) EmitLazyLogger(value log.LazyLogger) {
 	value(h)

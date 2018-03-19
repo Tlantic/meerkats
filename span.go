@@ -11,7 +11,7 @@ import (
 var spool = sync.Pool{
 	New: func() interface{} {
 		return &spanHandler{
-			Level:  LEVEL_ALL,
+			Level:  LevelAll,
 			fields: map[string]log.Field{},
 		}
 	},
@@ -46,7 +46,7 @@ func (h *spanHandler) GetLevel() Level {
 func (h *spanHandler) Dispose() {
 	h.logger = nil
 	h.fields = map[string]log.Field{}
-	h.Level = LEVEL_ALL
+	h.Level = LevelAll
 	spool.Put(h)
 }
 func (h *spanHandler) Clone() Handler {

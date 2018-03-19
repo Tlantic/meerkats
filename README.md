@@ -35,7 +35,7 @@ In order to register a handler just use the Register() logger method.
 ### Levels
 The [Level](https://github.com/Tlantic/meerkats/blob/master/levels.go#L5) type serves a double purpose. It is used to instruct meerkats from which level should an entry be considered and passed down to its handlers.
 ```Go
-  kat.SetLevel(kat.INFO)
+  kat.SetLevel(kat.LevelInfo)
   
   kat.Trace("trace entry")      // Ignored even if a handler subscribed to such level
   kat.Info("info entry")        // Dispatched to handlers
@@ -44,7 +44,7 @@ The [Level](https://github.com/Tlantic/meerkats/blob/master/levels.go#L5) type s
 It can also be used to tell handlers what entries will they dispatch by using bitwise ops.
 ```Go
   handler := writer.New()
-  handler.SetLevel(kat.DEBUG|kat.WARNING|kat.ERROR)
+  handler.SetLevel(kat.LevelDebug|kat.LevelWarning|kat.LevelError)
   kat.Register(handler)
   
   kat.Debug("debug entry")  // Dispatched to handler
@@ -92,7 +92,7 @@ func main() {
   
   err := http.ListenAndServe(":12345", func (w http.ResponseWriter, req *http.Request) {
     
-    log := kat.Clone() // create new logger context
+    log := kat.Child() // create new logger context
     log.EmitString("Origin", req.Header.Get("Origin"))
     //...
     
@@ -112,9 +112,9 @@ Standard Go Log Package
 Some packages may not want to directly depend on meerkats to use a logger or wan't a more generic interface to interact with.
 To satisfy such need Meerkats can be wrapped within a [StandardLogger](https://github.com/Tlantic/meerkats/blob/master/logger.go#L32) instance.
 ```Go
-  logger := kat.New(writer.New(kat.Level(kat.INFO|kat.ERROR|kat.FATAL|kat.PANIC)))
+  logger := kat.New(writer.New(kat.Level(kat.LevelInfo|kat.LevelError|kat.LevelFatal|kat.LevelPanic)))
   
-  std := kat.NewStandardLogger(logger, kat.INFO)
+  std := kat.NewStandardLogger(logger, kat.LevelInfo)
 ```
 
 ### Intercept

@@ -3,19 +3,20 @@ package benchmark
 import (
 	"fmt"
 	"testing"
-
-	"github.com/uber-go/zap"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"io/ioutil"
 )
 
-func zap_fakeFields() []zap.Field {
-	return []zap.Field{
+func zap_fakeFields() []zapcore.Field {
+	return []zapcore.Field{
 		zap.Int("int", 1),
 		zap.Int64("int64", 2),
 		zap.Float64("float", 3.0),
 		zap.String("string", "four!"),
 		zap.Bool("bool", true),
 		zap.String("another string", "done!"),
-		zap.Object("object", _jane),
+		zap.Any("object", _jane),
 	}
 }
 
@@ -32,7 +33,11 @@ func BenchmarkZapNew(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			zap.New(zap.NewTextEncoder(), zap.PanicLevel)
+			zap.New(zapcore.NewCore(
+				zapcore.NewConsoleEncoder(zap.NewProductionEncoderConfig()),
+				zapcore.AddSync(ioutil.Discard),
+				zapcore.PanicLevel,
+			))
 		}
 	})
 }
@@ -42,17 +47,22 @@ func BenchmarkZapNewWithPredefinedFields(b *testing.B) {
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			for pb.Next() {
-				zap.New(
-					zap.NewTextEncoder(),
-					zap.ErrorLevel,
-					zap.Fields(zap_fakeFields()...))
+				zap.New(zapcore.NewCore(
+					zapcore.NewConsoleEncoder(zap.NewProductionEncoderConfig()),
+					zapcore.AddSync(ioutil.Discard),
+					zapcore.PanicLevel,
+				), zap.Fields(zap_fakeFields()...))
 			}
 		}
 	})
 }
 
 func BenchmarkZapDisabledLog(b *testing.B) {
-	logger := zap.New(zap.NewTextEncoder(), zap.ErrorLevel)
+	logger := zap.New(zapcore.NewCore(
+		zapcore.NewConsoleEncoder(zap.NewProductionEncoderConfig()),
+		zapcore.AddSync(ioutil.Discard),
+		zapcore.PanicLevel,
+	))
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -62,7 +72,11 @@ func BenchmarkZapDisabledLog(b *testing.B) {
 }
 
 func BenchmarkZapDisabledLogWithPredefinedFields(b *testing.B) {
-	logger := zap.New(zap.NewTextEncoder(), zap.ErrorLevel, zap.Fields(zap_fakeFields()...))
+	logger := zap.New(zapcore.NewCore(
+		zapcore.NewConsoleEncoder(zap.NewProductionEncoderConfig()),
+		zapcore.AddSync(ioutil.Discard),
+		zapcore.PanicLevel,
+	), zap.Fields(zap_fakeFields()...))
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -72,10 +86,11 @@ func BenchmarkZapDisabledLogWithPredefinedFields(b *testing.B) {
 }
 
 func BenchmarkZapDisabledLogWithFields(b *testing.B) {
-	logger := zap.New(
-		zap.NewTextEncoder(),
-		zap.ErrorLevel,
-	)
+	logger := zap.New(zapcore.NewCore(
+		zapcore.NewConsoleEncoder(zap.NewProductionEncoderConfig()),
+		zapcore.AddSync(ioutil.Discard),
+		zapcore.PanicLevel,
+	))
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -85,7 +100,11 @@ func BenchmarkZapDisabledLogWithFields(b *testing.B) {
 }
 
 func BenchmarkZapLog(b *testing.B) {
-	logger := zap.New(zap.NewTextEncoder(), zap.DiscardOutput)
+	logger := zap.New(zapcore.NewCore(
+		zapcore.NewConsoleEncoder(zap.NewProductionEncoderConfig()),
+		zapcore.AddSync(ioutil.Discard),
+		zapcore.InfoLevel,
+	))
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -95,7 +114,11 @@ func BenchmarkZapLog(b *testing.B) {
 }
 
 func BenchmarkZapLogWithPredefinedFields(b *testing.B) {
-	logger := zap.New(zap.NewTextEncoder(), zap.DiscardOutput, zap.Fields(zap_fakeFields()...))
+	logger := zap.New(zapcore.NewCore(
+		zapcore.NewConsoleEncoder(zap.NewProductionEncoderConfig()),
+		zapcore.AddSync(ioutil.Discard),
+		zapcore.InfoLevel,
+	), zap.Fields(zap_fakeFields()...))
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -105,10 +128,11 @@ func BenchmarkZapLogWithPredefinedFields(b *testing.B) {
 }
 
 func BenchmarkZapLogWithFields(b *testing.B) {
-	logger := zap.New(
-		zap.NewTextEncoder(),
-		zap.DiscardOutput,
-	)
+	logger := zap.New(zapcore.NewCore(
+		zapcore.NewConsoleEncoder(zap.NewProductionEncoderConfig()),
+		zapcore.AddSync(ioutil.Discard),
+		zapcore.InfoLevel,
+	))
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {

@@ -88,7 +88,7 @@ func (s *span) setTag(key string, value interface{}) {
 var pool = sync.Pool{
 	New: func() interface{} {
 		return &context{
-			Level:    TRACE,
+			Level:    LevelTrace,
 			metadata: metadata{kv: map[string]interface{}{}},
 			handlers: handlerCollection{col: nil},
 		}
@@ -114,7 +114,7 @@ func New(options ...LoggerOption) Logger {
 	return ctx
 }
 func From(parent Logger, options ...LoggerOption) (ctx Logger) {
-	ctx = parent.Clone()
+	ctx = parent.Child()
 	for _, opt := range options {
 		opt.Apply(ctx)
 	}
@@ -309,28 +309,28 @@ func (ctx *context) Log(level Level, msg string, fields ...log.Field) {
 	}
 }
 func (ctx *context) Trace(msg string, fields ...log.Field) {
-	ctx.Log(TRACE, msg, fields...)
+	ctx.Log(LevelTrace, msg, fields...)
 }
 func (ctx *context) Debug(msg string, fields ...log.Field) {
-	ctx.Log(DEBUG, msg, fields...)
+	ctx.Log(LevelDebug, msg, fields...)
 }
 func (ctx *context) Info(msg string, fields ...log.Field) {
-	ctx.Log(INFO, msg, fields...)
+	ctx.Log(LevelInfo, msg, fields...)
 }
 func (ctx *context) Warn(msg string, fields ...log.Field) {
-	ctx.Log(WARNING, msg, fields...)
+	ctx.Log(LevelWarning, msg, fields...)
 }
 func (ctx *context) Error(msg string, fields ...log.Field) {
-	ctx.Log(ERROR, msg, fields...)
+	ctx.Log(LevelError, msg, fields...)
 }
 func (ctx *context) Panic(msg string, fields ...log.Field) {
 	defer ctx.Dispose()
-	ctx.Log(PANIC, msg, fields...)
+	ctx.Log(LevelPanic, msg, fields...)
 	panic(msg)
 }
 func (ctx *context) Fatal(msg string, fields ...log.Field) {
 	defer ctx.Dispose()
-	ctx.Log(FATAL, msg, fields...)
+	ctx.Log(LevelFatal, msg, fields...)
 	os.Exit(1)
 }
 
@@ -357,7 +357,7 @@ func (ctx *context) Clone() Logger {
 	return c
 }
 func (ctx *context) Dispose() {
-	ctx.Level = TRACE
+	ctx.Level = LevelTrace
 
 	ctx.wg.Wait()
 	ctx.span.clear()

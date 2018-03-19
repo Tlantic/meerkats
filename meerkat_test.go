@@ -4,21 +4,22 @@ import (
 	"testing"
 
 	"github.com/Tlantic/meerkats/handlers/writer"
+	"github.com/opentracing/opentracing-go/log"
 )
 
 func TestNew(t *testing.T) {
-	logger := New(TRACE)
+	logger := New(LevelTrace)
 	if logger == nil {
 		t.Fail()
 	}
 }
 
 func TestRegister(t *testing.T) {
-	logger := New(TRACE)
-	logger.Register(writer.New(LevelOption(LEVEL_ALL)))
+	logger := New(LevelTrace)
+	logger.Register(writer.New(LevelOption(LevelAll)))
 }
 
 func TestLog(t *testing.T) {
-	logger := New(TRACE)
-	logger.Log(TRACE, "test message", Field{Key: "boolValue", Type: TypeBool, ValueBool: true})
+	logger := New(LevelTrace)
+	logger.Log(LevelTrace, "test message",log.Bool("boolValue", true))
 }
