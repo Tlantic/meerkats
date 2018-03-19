@@ -83,6 +83,6 @@ func Fatal(msg string, fields ...log.Field) {
 	root.Fatal(msg, fields...)
 }
 
-func Child() Logger {
-	return root.Child()
+func Child(options ... LoggerOption) Logger {
+	return root.Child(options...)
 }
