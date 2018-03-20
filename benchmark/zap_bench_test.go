@@ -2,10 +2,11 @@ package benchmark
 
 import (
 	"fmt"
+	"io/ioutil"
 	"testing"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"io/ioutil"
 )
 
 func zap_fakeFields() []zapcore.Field {

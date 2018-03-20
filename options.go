@@ -5,7 +5,6 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 )
 
-
 // LoggerOption represents an object that can act as a logger visitor
 type LoggerOption interface {
 	Apply(Logger)
@@ -13,6 +12,7 @@ type LoggerOption interface {
 
 // LoggerOptionFunc represents a function that can act as a logger visitor
 type LoggerOptionFunc func(Logger)
+
 func (f LoggerOptionFunc) Apply(l Logger) {
 	f(l)
 }
@@ -31,18 +31,21 @@ func WithLevel(level Level) LoggerOption {
 		l.SetLevel(level)
 	})
 }
+
 // WithFields adds fields to the logger and consequent children.
 func WithFields(fs ...log.Field) LoggerOption {
 	return LoggerOptionFunc(func(l Logger) {
 		l.EmitField(fs...)
 	})
 }
+
 // WithTag adds a tag to the logger and consequent children.
 func WithTag(k string, v interface{}) LoggerOption {
 	return LoggerOptionFunc(func(l Logger) {
-			l.SetTag(k, v)
+		l.SetTag(k, v)
 	})
 }
+
 // WithTags adds tags to the logger and consequent children.
 func WithTags(tags map[string]interface{}) LoggerOption {
 	return LoggerOptionFunc(func(l Logger) {
@@ -59,6 +62,7 @@ type HandlerOption interface {
 
 // HandlerOptionFunc represents a function that can act as a handler visitor
 type HandlerOptionFunc func(Handler)
+
 func (f HandlerOptionFunc) Apply(h Handler) {
 	f(h)
 }

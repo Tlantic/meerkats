@@ -1,8 +1,9 @@
 package meerkats
 
 import (
-	"github.com/opentracing/opentracing-go/log"
 	"time"
+
+	"github.com/opentracing/opentracing-go/log"
 )
 
 type DoneCallback func()

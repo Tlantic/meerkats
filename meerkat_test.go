@@ -21,5 +21,5 @@ func TestRegister(t *testing.T) {
 
 func TestLog(t *testing.T) {
 	logger := New(LevelTrace)
-	logger.Log(LevelTrace, "test message",log.Bool("boolValue", true))
+	logger.Log(LevelTrace, "test message", log.Bool("boolValue", true))
 }
