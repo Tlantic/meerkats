@@ -53,7 +53,6 @@ func EmitObject(key string, value interface{}) {
 	root.EmitObject(key, value)
 }
 
-
 func EmitField(fields ...log.Field) {
 	root.EmitField(fields...)
 }
@@ -83,6 +82,6 @@ func Fatal(msg string, fields ...log.Field) {
 	root.Fatal(msg, fields...)
 }
 
-func Child(options ... LoggerOption) Logger {
+func Child(options ...LoggerOption) Logger {
 	return root.Child(options...)
 }

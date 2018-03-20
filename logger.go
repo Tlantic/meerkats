@@ -3,6 +3,7 @@ package meerkats
 import (
 	. "context"
 	"fmt"
+
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/log"
 )
@@ -47,7 +48,7 @@ type Logger interface {
 	Fatal(msg string, fields ...log.Field)
 
 	Write(p []byte) (n int, err error)
-	Child(options ... LoggerOption) Logger
+	Child(options ...LoggerOption) Logger
 	Close() error
 }
 

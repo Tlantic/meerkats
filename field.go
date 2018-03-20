@@ -2,6 +2,7 @@ package meerkats
 
 import (
 	"encoding/json"
+
 	"github.com/opentracing/opentracing-go/log"
 )
 

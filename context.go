@@ -1,12 +1,13 @@
 package meerkats
 
 import (
-	"github.com/opentracing/opentracing-go"
-	"github.com/opentracing/opentracing-go/log"
 	"os"
 	"regexp"
 	"sync"
 	"time"
+
+	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/log"
 )
 
 type ctxKey uint8
@@ -282,7 +283,7 @@ func (ctx *context) Write(p []byte) (n int, err error) {
 	ctx.Log(ctx.Level, _reNewline.ReplaceAllString(string(p), ""))
 	return
 }
-func (ctx *context) Child(options ... LoggerOption) Logger {
+func (ctx *context) Child(options ...LoggerOption) Logger {
 	c := pool.Get().(*context)
 	c.Level = ctx.Level
 
@@ -292,12 +293,12 @@ func (ctx *context) Child(options ... LoggerOption) Logger {
 		c.span.Span = s.Tracer().StartSpan(ctx.OperationName(), opentracing.ChildOf(ctx.span.Context()))
 	}
 
+	ctx.handlers.forEach(func(_ int, h Handler) { h.Child().Apply(c) })
+	ctx.metadata.forEach(c.SetTag)
+
 	for _, opt := range options {
 		opt.Apply(c)
 	}
-
-	ctx.handlers.forEach(func(_ int, h Handler) { h.Child().Apply(c) })
-	ctx.metadata.forEach(c.SetTag)
 
 	return c
 }

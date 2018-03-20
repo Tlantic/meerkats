@@ -3,9 +3,10 @@ package meerkats
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/opentracing/opentracing-go/log"
 	"sync"
 	"time"
+
+	"github.com/opentracing/opentracing-go/log"
 )
 
 var spool = sync.Pool{
