@@ -89,7 +89,7 @@ func (h *handler) Child() meerkats.Handler {
 	defer h.mu.Unlock()
 	clone := pool.Get().(*handler)
 	clone.w = h.w
-	clone.fields = make([]log.Field, 0, len(h.fields)+2)
+	clone.fields = make([]log.Field, len(h.fields), len(h.fields)+2)
 	copy(clone.fields, h.fields)
 
 	clone.Level = h.Level
