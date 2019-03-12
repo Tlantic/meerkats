@@ -31,16 +31,24 @@ func (m *metadata) get(key string) interface{} {
 }
 func (m *metadata) set(key string, value interface{}) {
 	m.Lock()
-	defer m.Unlock()
 	m.kv[key] = value
+	m.Unlock()
 }
 func (m *metadata) forEach(fn func(key string, value interface{})) {
 	m.RLock()
-	defer m.RUnlock()
-
 	for k, v := range m.kv {
 		fn(k, v)
 	}
+	m.RUnlock()
+}
+func (m *metadata) dict() map[string]interface{} {
+	m2 := make(map[string]interface{})
+	m.RLock()
+	for k, v := range m.kv {
+		m2[k] = v
+	}
+	m.RUnlock()
+	return m2
 }
 
 type handlerCollection struct {
@@ -245,7 +253,7 @@ func (ctx *context) Log(level Level, msg string, fields ...log.Field) {
 		ctx.handlers.forEach(func(_ int, h Handler) {
 			if h.GetLevel()&level != 0 {
 				ctx.wg.Add(1)
-				h.Log(now, level, msg, fields, ctx.metadata.kv, ctx.wg.Done)
+				h.Log(now, level, msg, fields, ctx.metadata.dict(), ctx.wg.Done)
 			}
 		})
 	}
